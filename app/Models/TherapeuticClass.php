@@ -4,9 +4,9 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
-class PatientProfile extends Model
+class TherapeuticClass extends Model
 {
     use HasFactory;
 
@@ -23,19 +23,18 @@ class PatientProfile extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'user_id',
-        'date_of_birth',
-        'gender',
-        'national_id',
-        'medical_history_summary',
-        'default_address',
+        'name',
+        'description',
     ];
 
     /**
-     * Get the user that owns the patient profile.
+     * Get the medicines that belong to this therapeutic class.
      */
-    public function user(): BelongsTo
+    public function medicines(): BelongsToMany
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsToMany(Medicine::class, 'medicine_classes')
+                    ->withPivot('note');
     }
 }
+
+

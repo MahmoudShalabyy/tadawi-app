@@ -4,9 +4,10 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Medicine;
 
-class PatientProfile extends Model
+class ActiveIngredient extends Model
 {
     use HasFactory;
 
@@ -23,19 +24,17 @@ class PatientProfile extends Model
      * @var array<int, string>
      */
     protected $fillable = [
-        'user_id',
-        'date_of_birth',
-        'gender',
-        'national_id',
-        'medical_history_summary',
-        'default_address',
+        'name',
+        'description',
     ];
 
     /**
-     * Get the user that owns the patient profile.
+     * Get the medicines that reference this active ingredient.
      */
-    public function user(): BelongsTo
+    public function medicines(): HasMany
     {
-        return $this->belongsTo(User::class);
+        return $this->hasMany(Medicine::class);
     }
 }
+
+
