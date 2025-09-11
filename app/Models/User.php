@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -62,10 +63,10 @@ class User extends Authenticatable
     /**
      * Get the pharmacy profile associated with the user.
      */
-    // public function pharmacy(): HasOne
-    // {
-    //     return $this->hasOne(Pharmacy::class);
-    // }
+     public function pharmacyProfile(): HasOne
+     {
+         return $this->hasOne(PharmacyProfile::class);
+     }
 
     /**
      * Get the doctor profile associated with the user.
@@ -73,5 +74,29 @@ class User extends Authenticatable
     public function doctorProfile(): HasOne
     {
         return $this->hasOne(DoctorProfile::class);
+    }
+
+    /**
+     * Get the orders placed by this user.
+     */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Get the donations made by this user.
+     */
+    public function donations(): HasMany
+    {
+        return $this->hasMany(Donation::class);
+    }
+
+    /**
+     * Get the reviews written by this user.
+     */
+    public function reviews(): HasMany
+    {
+        return $this->hasMany(Review::class);
     }
 }
