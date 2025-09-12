@@ -22,6 +22,7 @@ return new class extends Migration
         $table->enum('role', ['patient', 'pharmacy', 'admin', 'doctor'])->default('patient');
         $table->enum('status', ['pending', 'active', 'suspended'])->default('active'); // Patients are active by default
         $table->boolean('travel_mode')->default(false);
+        $table->string('google_id')->nullable()->index();
         $table->rememberToken();
         $table->timestamps();
         $table->softDeletes();
