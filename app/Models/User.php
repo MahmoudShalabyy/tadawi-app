@@ -8,10 +8,11 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -27,6 +28,8 @@ class User extends Authenticatable
         'role',
         'status',
         'travel_mode',
+        'google_id',
+        'email_verified_at',
     ];
 
     /**
@@ -49,6 +52,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'travel_mode' => 'boolean',
         ];
     }
 
@@ -98,5 +102,21 @@ class User extends Authenticatable
     public function reviews(): HasMany
     {
         return $this->hasMany(Review::class);
+    }
+
+    /**
+     * Check if the user's email is verified.
+     */
+    public function isVerified(): bool
+    {
+        return !is_null($this->email_verified_at);
+    }
+
+    /**
+     * Check if the user has a specific role.
+     */
+    public function hasRole(string $role): bool
+    {
+        return $this->role === $role;
     }
 }
