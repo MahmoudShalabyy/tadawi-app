@@ -151,6 +151,41 @@ class AuthController extends Controller
     }
 
     /**
+     * Send password reset OTP to user's email.
+     */
+    public function sendPasswordResetOtp(AuthRequest $request)
+    {
+        try {
+            $result = $this->authService->sendPasswordResetOtp($request->email);
+            return response()->json($result, 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Failed to send password reset OTP',
+                'errors' => $e->errors()
+            ], 422);
+        }
+    }
+
+    /**
+     * Reset password using OTP verification.
+     */
+    public function resetPassword(AuthRequest $request)
+    {
+        try {
+            $result = $this->authService->resetPasswordWithOtp(
+                $request->otp,
+                $request->password
+            );
+            return response()->json($result, 200);
+        } catch (ValidationException $e) {
+            return response()->json([
+                'message' => 'Password reset failed',
+                'errors' => $e->errors()
+            ], 422);
+        }
+    }
+
+    /**
      * Logout user (revoke current token).
      */
     public function logout(Request $request)
