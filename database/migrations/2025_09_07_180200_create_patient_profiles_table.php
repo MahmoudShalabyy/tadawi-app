@@ -25,7 +25,7 @@ return new class extends Migration
         //for delivery system in future
         $table->text('default_address')->nullable();
         
-
+        $table->timestamps();
     });
 }
 

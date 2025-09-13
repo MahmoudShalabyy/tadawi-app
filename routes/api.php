@@ -8,6 +8,8 @@ Route::prefix('v1')->group(function () {
         // Public routes
         Route::post('register', [AuthController::class, 'register']);
         Route::post('login', [AuthController::class, 'login']);
+        
+        // OTP routes - accessible both publicly and for authenticated users
         Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
         Route::post('resend-otp', [AuthController::class, 'resendOtp']);
 

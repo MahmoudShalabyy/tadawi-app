@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\AuthRequest;
 use App\Services\AuthService;
 use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
@@ -20,14 +21,8 @@ class AuthController extends Controller
     /**
      * Register a new user.
      */
-    public function register(Request $request)
+    public function register(AuthRequest $request)
     {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
-            'phone_number' => 'nullable|string|max:20|unique:users,phone_number',
-        ]);
 
         try {
             $result = $this->authService->registerWithEmail($request->only([
@@ -46,12 +41,8 @@ class AuthController extends Controller
     /**
      * Login user with email and password.
      */
-    public function login(Request $request)
+    public function login(AuthRequest $request)
     {
-        $request->validate([
-            'email' => 'required|string|email',
-            'password' => 'required|string',
-        ]);
 
         try {
             $result = $this->authService->loginWithEmail($request->only(['email', 'password']));
@@ -95,15 +86,10 @@ class AuthController extends Controller
     /**
      * Verify OTP code.
      */
-    public function verifyOtp(Request $request)
+    public function verifyOtp(AuthRequest $request)
     {
-        $request->validate([
-            'email' => 'required|string|email',
-            'otp' => 'required|string|size:6',
-        ]);
-
         try {
-            $result = $this->authService->verifyOtp($request->email, $request->otp);
+            $result = $this->authService->verifyOtp($request->otp);
             return response()->json($result, 200);
         } catch (ValidationException $e) {
             return response()->json([
@@ -116,12 +102,8 @@ class AuthController extends Controller
     /**
      * Resend OTP code.
      */
-    public function resendOtp(Request $request)
+    public function resendOtp(AuthRequest $request)
     {
-        $request->validate([
-            'email' => 'required|string|email',
-        ]);
-
         try {
             $result = $this->authService->resendOtp($request->email);
             return response()->json($result, 200);
@@ -136,12 +118,8 @@ class AuthController extends Controller
     /**
      * Update user role and create profile.
      */
-    public function updateRole(Request $request)
+    public function updateRole(AuthRequest $request)
     {
-        $request->validate([
-            'role' => 'required|in:patient,doctor,pharmacy',
-            'profile_data' => 'sometimes|array'
-        ]);
 
         try {
             $user = $this->authService->updateUserRole(
