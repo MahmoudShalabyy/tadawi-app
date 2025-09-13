@@ -142,11 +142,16 @@ class AuthService
     /**
      * Verify OTP and activate user account.
      */
-    public function verifyOtp(string $email, string $otpCode): array
+    public function verifyOtp(string $otpCode): array
     {
-        $otp = Otp::findAndVerify($email, $otpCode, 'verification');
+        // Find the most recent valid OTP for verification
+        $otp = Otp::where('type', 'verification')
+                  ->where('used', false)
+                  ->where('expires_at', '>', Carbon::now())
+                  ->orderBy('created_at', 'desc')
+                  ->first();
 
-        if (!$otp) {
+        if (!$otp || !$otp->verifyOtp($otpCode)) {
             throw ValidationException::withMessages([
                 'otp' => ['Invalid or expired OTP code.']
             ]);
@@ -156,7 +161,7 @@ class AuthService
         $otp->markAsUsed();
 
         // Verify user email
-        $user = User::where('email', $email)->first();
+        $user = User::where('email', $otp->email)->first();
         if ($user && !$user->isVerified()) {
             $user->update([
                 'email_verified_at' => Carbon::now(),
