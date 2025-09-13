@@ -228,6 +228,71 @@ class AuthService
     }
 
     /**
+     * Send password reset OTP to user's email.
+     */
+    public function sendPasswordResetOtp(string $email): array
+    {
+        $user = User::where('email', $email)->first();
+        
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => ['User not found with this email address.']
+            ]);
+        }
+
+        if (!$user->isVerified()) {
+            throw ValidationException::withMessages([
+                'email' => ['Please verify your email first before resetting password.']
+            ]);
+        }
+
+        $this->sendPasswordResetOtpEmail($email);
+
+        return ['message' => 'Password reset OTP sent to your email.'];
+    }
+
+    /**
+     * Verify password reset OTP and reset password.
+     */
+    public function resetPasswordWithOtp(string $otpCode, string $newPassword): array
+    {
+        // Find the most recent valid OTP for password reset
+        $otp = Otp::where('type', 'password_reset')
+                  ->where('used', false)
+                  ->where('expires_at', '>', Carbon::now())
+                  ->orderBy('created_at', 'desc')
+                  ->first();
+
+        if (!$otp || !$otp->verifyOtp($otpCode)) {
+            throw ValidationException::withMessages([
+                'otp' => ['Invalid or expired OTP code.']
+            ]);
+        }
+
+        // Mark OTP as used
+        $otp->markAsUsed();
+
+        // Update user password
+        $user = User::where('email', $otp->email)->first();
+        if (!$user) {
+            throw ValidationException::withMessages([
+                'email' => ['User not found.']
+            ]);
+        }
+
+        $user->update([
+            'password' => Hash::make($newPassword)
+        ]);
+
+        // Revoke all existing tokens for security
+        $user->tokens()->delete();
+
+        return [
+            'message' => 'Password reset successfully. Please login with your new password.'
+        ];
+    }
+
+    /**
      * Send OTP email to user.
      */
     private function sendOtpEmail(string $email): void
@@ -250,6 +315,33 @@ class AuthService
             Log::error("Failed to send OTP to {$email}: " . $e->getMessage());
             throw ValidationException::withMessages([
                 'email' => ['Failed to send OTP. Please try again.']
+            ]);
+        }
+    }
+
+    /**
+     * Send password reset OTP email to user.
+     */
+    private function sendPasswordResetOtpEmail(string $email): void
+    {
+        try {
+            $otpRecord = Otp::generateOtp($email, 'password_reset');
+            $otpCode = $otpRecord->getPlainOtp();
+            
+            // Send email with OTP
+            Mail::send('emails.password-reset-otp', ['otp' => $otpCode], function ($message) use ($email) {
+                $message->to($email);
+                $message->subject('Tadawi - Password Reset Code');
+            });
+
+            // In development, log the OTP for testing
+            if (app()->environment('local')) {
+                Log::info("Password Reset OTP for {$email}: {$otpCode}");
+            }
+        } catch (\Exception $e) {
+            Log::error("Failed to send password reset OTP to {$email}: " . $e->getMessage());
+            throw ValidationException::withMessages([
+                'email' => ['Failed to send password reset OTP. Please try again.']
             ]);
         }
     }

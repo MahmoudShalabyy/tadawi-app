@@ -112,6 +112,39 @@ class AuthRequest extends FormRequest
             ];
         }
 
+        // Send password reset OTP validation
+        if ($method === 'POST' && $this->is('api/v1/auth/send-password-reset-otp')) {
+            return [
+                'email' => [
+                    'required',
+                    'string',
+                    'email:rfc,dns'
+                ]
+            ];
+        }
+
+        // Reset password validation
+        if ($method === 'POST' && $this->is('api/v1/auth/reset-password')) {
+            return [
+                'otp' => [
+                    'required',
+                    'string',
+                    'size:6',
+                    'regex:/^[0-9]{6}$/'
+                ],
+                'password' => [
+                    'required',
+                    'string',
+                    'min:8',
+                    'regex:/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/'
+                ],
+                'password_confirmation' => [
+                    'required',
+                    'same:password'
+                ]
+            ];
+        }
+
         return [];
     }
 
