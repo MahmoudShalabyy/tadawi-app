@@ -3,12 +3,15 @@
 use App\Http\Controllers\Api\AuthController;
 use Illuminate\Support\Facades\Route;
 
+// Simple login route for testing
+Route::post('login', [AuthController::class, 'login']);
+
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
         // Public routes
         Route::post('register', [AuthController::class, 'register']);
         Route::post('login', [AuthController::class, 'login']);
-        
+
         // OTP routes - accessible both publicly and for authenticated users
         Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
         Route::post('resend-otp', [AuthController::class, 'resendOtp']);

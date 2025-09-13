@@ -70,10 +70,10 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->handleGoogleCallback();
-            
+
             // In a SPA, you might want to redirect to frontend with token
             // return redirect()->to(config('app.frontend_url') . '/auth/callback?token=' . $result['token']);
-            
+
             return response()->json($result, 200);
         } catch (ValidationException $e) {
             return response()->json([
