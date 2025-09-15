@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Api\AuthController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\InteractionController;
+use App\Http\Controllers\DrugInteractionController;
+
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
@@ -32,6 +35,10 @@ Route::prefix('v1')->group(function () {
                 Route::post('update-role', [AuthController::class, 'updateRole']);
             });
         });
+        //Route::post('/check-interaction', [InteractionController::class, 'check']);
+        Route::get('/suggest-drugs', [InteractionController::class, 'suggest']);
+       Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
+
     });
 
     // Example of using the verified middleware for protected routes
