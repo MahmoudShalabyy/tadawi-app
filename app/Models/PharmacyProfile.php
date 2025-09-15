@@ -69,6 +69,12 @@ class PharmacyProfile extends Model
     {
         return $this->hasMany(Review::class, 'pharmacy_id');
     }
+
+      public function medicines()
+    {
+        return $this->belongsToMany(Medicine::class, 'stock_batches', 'pharmacy_id', 'medicine_id')
+                    ->withPivot(['batch_num','exp_date','quantity']);
+    }
 }
 
 

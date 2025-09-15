@@ -7,10 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Medicine extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     /**
      * Indicates if the model should be timestamped.
@@ -83,6 +84,16 @@ class Medicine extends Model
     {
         return $this->belongsToMany(Donation::class, 'donation_medicines')
                     ->withPivot(['quantity', 'expiry_date', 'batch_num']);
+    }
+
+    /**
+     * Pharmacies that have this medicine in stock (via stock_batches).
+     */
+    
+     public function pharmacies(): BelongsToMany
+    {
+        return $this->belongsToMany(PharmacyProfile::class, 'stock_batches', 'medicine_id', 'pharmacy_id')
+                    ->withPivot(['batch_num', 'exp_date', 'quantity']);
     }
 }
 
