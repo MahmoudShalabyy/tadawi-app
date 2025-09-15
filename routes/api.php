@@ -3,6 +3,12 @@
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\SearchController;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\InteractionController;
+use App\Http\Controllers\DrugInteractionController;
+
+
+// Simple login route for testing
+Route::post('login', [AuthController::class, 'login']);
 
 // Simple login route for testing
 Route::post('login', [AuthController::class, 'login']);
@@ -36,8 +42,13 @@ Route::prefix('v1')->group(function () {
                 Route::post('update-role', [AuthController::class, 'updateRole']);
             });
         });
+        //Route::post('/check-interaction', [InteractionController::class, 'check']);
+        Route::get('/suggest-drugs', [InteractionController::class, 'suggest']);
+        Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
+        
         //search Route
         Route::get('/search', [SearchController::class, 'search']);
+
 
     });
 
