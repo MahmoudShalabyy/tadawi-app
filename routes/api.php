@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\SearchController;
 use Illuminate\Support\Facades\Route;
 
 // Simple login route for testing
@@ -35,6 +36,9 @@ Route::prefix('v1')->group(function () {
                 Route::post('update-role', [AuthController::class, 'updateRole']);
             });
         });
+        //search Route
+        Route::get('/search', [SearchController::class, 'search']);
+
     });
 
     // Example of using the verified middleware for protected routes

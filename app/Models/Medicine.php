@@ -85,6 +85,16 @@ class Medicine extends Model
         return $this->belongsToMany(Donation::class, 'donation_medicines')
                     ->withPivot(['quantity', 'expiry_date', 'batch_num']);
     }
+
+    /**
+     * Pharmacies that have this medicine in stock (via stock_batches).
+     */
+    
+     public function pharmacies(): BelongsToMany
+    {
+        return $this->belongsToMany(PharmacyProfile::class, 'stock_batches', 'medicine_id', 'pharmacy_id')
+                    ->withPivot(['batch_num', 'exp_date', 'quantity']);
+    }
 }
 
 
