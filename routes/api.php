@@ -1,10 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DonationController;
 use Illuminate\Support\Facades\Route;
 
-// Simple login route for testing
-Route::post('login', [AuthController::class, 'login']);
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
@@ -37,8 +36,19 @@ Route::prefix('v1')->group(function () {
         });
     });
 
-    // Example of using the verified middleware for protected routes
-    // Route::middleware(['auth:sanctum', 'verified'])->group(function () {
-    //     // Routes that require verified email
-    // });
+    // Donation routes - require authentication
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // User's own donations
+        Route::get('donations', [DonationController::class, 'index']);
+        Route::post('donations', [DonationController::class, 'store']);
+        Route::get('donations/{id}', [DonationController::class, 'show']);
+        Route::put('donations/{id}', [DonationController::class, 'update']);
+        Route::delete('donations/{id}', [DonationController::class, 'destroy']);
+        
+        // Public donations (for searching)
+        Route::get('donations-available', [DonationController::class, 'available']);
+    });
+
+    // Admin/Public routes for viewing all donations
+    Route::get('donations-all', [DonationController::class, 'all']);
 });
