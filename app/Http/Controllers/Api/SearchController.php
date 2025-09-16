@@ -22,10 +22,6 @@ class SearchController extends Controller
         $lng  = (float) $data['lng'];
         $radius = 50;
 
-        // Pagination parameters
-        $page = max((int) $request->query('page', 1), 1);
-        $perPage = max((int) $request->query('per_page', 10), 1);
-
         $medicines = Medicine::where('brand_name', 'like', "%{$name}%")->get();
 
         if ($medicines->isEmpty()) {
@@ -73,17 +69,14 @@ class SearchController extends Controller
             )
             ->having('distance', '<=', $radius)
             ->orderBy('distance', 'asc')
+            ->limit(10)
             ->get();
 
         if ($results->isEmpty()) {
-            return response()->json(['message' => 'No pharmacies carry that medicine within your area.'], 404);
+            return response()->json(['message' => 'No pharmacies has that medicine within your area.'], 404);
         }
 
-        // Pagination logic
-        $total = $results->count();
-        $paginated = $results->forPage($page, $perPage)->values();
-
-        $payload = $paginated->map(function ($row) {
+        $payload = $results->map(function ($row) {
             return [
                 'pharmacy_id'   => $row->id,
                 'pharmacy_location' => $row->pharmacy_location,
@@ -105,14 +98,6 @@ class SearchController extends Controller
                 'lat' => $lat,
                 'lng' => $lng,
                 'radius_km' => $radius,
-                'page' => $page,
-                'per_page' => $perPage,
-            ],
-            'pagination' => [
-                'total' => $total,
-                'current_page' => $page,
-                'per_page' => $perPage,
-                'last_page' => (int) ceil($total / $perPage),
             ],
             'matches' => $payload
         ]);
