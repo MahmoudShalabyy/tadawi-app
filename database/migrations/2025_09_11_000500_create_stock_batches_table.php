@@ -18,6 +18,8 @@ return new class extends Migration
             $table->string('batch_num', 100)->nullable();
             $table->date('exp_date')->nullable();
             $table->integer('quantity');
+            $table->timestamps();
+            $table->softDeletes();
 
             // Unique constraint: prevent duplicate batches (same pharmacy + medicine + batch)
             $table->unique(['pharmacy_id', 'medicine_id', 'batch_num'], 'uq_stock_pharmacy_medicine_batch');

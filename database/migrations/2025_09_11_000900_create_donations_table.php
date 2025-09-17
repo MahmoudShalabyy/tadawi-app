@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('contact_info')->nullable();
             $table->boolean('verified')->default(false);
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes for common queries
             $table->index('verified', 'idx_donations_verified');

@@ -19,6 +19,7 @@ return new class extends Migration
             $table->enum('payment_method', ['cash', 'paypal']);
             $table->string('billing_address')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes for common queries
             $table->index('status', 'idx_orders_status');

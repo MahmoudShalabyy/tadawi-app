@@ -18,6 +18,7 @@ return new class extends Migration
             $table->text('ocr_text')->nullable();
             $table->boolean('validated_by_doctor')->default(false);
             $table->timestamps();
+            $table->softDeletes();
 
             // Indexes for common queries
             $table->index('order_id', 'idx_prescription_uploads_order');
