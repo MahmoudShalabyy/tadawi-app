@@ -11,17 +11,6 @@ use App\Http\Controllers\Api\AlternativeSearchController;
 use App\Http\Controllers\Api\PharmacyController;
 use App\Http\Controllers\Api\CartController; // الكونترولر الجديد
 
-// Simple login route for testing
-Route::post('login', [AuthController::class, 'login']);
-
-// search Route
-Route::get('/search', [SearchController::class, 'search']);
-Route::post('search/with-alternatives', [AlternativeSearchController::class, 'search']);
-
-
-// get all pharmacies
-Route::get('pharmacies', [PharmacyController::class, 'index']);
-
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
         // Public routes
@@ -65,12 +54,25 @@ Route::prefix('v1')->group(function () {
         Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
     });
 
+
+    // search routes
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Search routes
+        Route::get('search', [SearchController::class, 'search']);
+        Route::post('search/with-alternatives', [AlternativeSearchController::class, 'search']);
+
+        // Get all pharmacies
+        Route::get('pharmacies', [PharmacyController::class, 'index']);
+
+       
+
     // Donation routes - require authentication
     Route::middleware(['auth:sanctum'])->group(function () {
         // Medicines search (authenticated, minimal data)
         Route::get('medicines/search', [MedicineController::class, 'search']);
 
         // User's own donations
+
         Route::get('donations', [DonationController::class, 'index']);
         Route::post('donations', [DonationController::class, 'store']);
         Route::get('donations/{id}', [DonationController::class, 'show']);

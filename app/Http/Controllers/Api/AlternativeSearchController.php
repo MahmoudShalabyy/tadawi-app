@@ -20,62 +20,76 @@ class AlternativeSearchController extends Controller
 
     public function search(Request $request)
     {
-        $medicine   = $request->input('name');
-        $lat        = $request->input('lat');
-        $lng        = $request->input('lng');
-        $userDrugs  = $request->input('user_drugs', []);
+        $data = $request->validate([
+            'name'   => 'required|string',
+            'lat'    => 'required|numeric',
+            'lng'    => 'required|numeric',
+            'user_drugs' => 'array'
+        ]);
 
-        if (!$medicine) {
-            return response()->json(['error' => 'Medicine name is required'], 400);
-        }
+        $medicine   = $data['name'];
+        $lat        = (float) $data['lat'];
+        $lng        = (float) $data['lng'];
+        $userDrugs  = $data['user_drugs'] ?? [];
+        $radius     = 50; 
 
-        $results = [];
+        $results = collect();
         $unavailable = [];
 
-        $dbMedicine = Medicine::where('brand_name', 'like', "%{$medicine}%")->first();
+        // 1. Fetch AI alternatives
+        $aiAlternatives = $this->fetchAlternativesFromApi($medicine, $userDrugs);
 
-        if ($dbMedicine) {
-            $dbAlternatives = Medicine::where('active_ingredient_id', $dbMedicine->active_ingredient_id)
-                ->where('id', '!=', $dbMedicine->id)
-                ->pluck('brand_name')
-                ->toArray();
-
-            $aiAlternatives = $this->fetchAlternativesFromApi($medicine, $userDrugs, $dbAlternatives);
-
-        } else {
-            $aiAlternatives = $this->fetchAlternativesFromApi($medicine, $userDrugs, []);
-            $dbAlternatives = [];
-        }
-
-        $alternatives = array_unique(array_merge($dbAlternatives, $aiAlternatives));
-
-        foreach ($alternatives as $alt) {
+        foreach ($aiAlternatives as $alt) {
             if (!is_string($alt) || empty($alt)) continue;
 
-            $dbAlt = Medicine::where('brand_name', 'like', "%{$alt}%")->first();
+            $dbMedicine = Medicine::whereRaw('LOWER(brand_name) = ?', [strtolower($alt)])->first();
 
-            if ($dbAlt) {
-                $pharmacies = DB::table('stock_batches')
-                    ->join('pharmacy_profiles', 'stock_batches.pharmacy_id', '=', 'pharmacy_profiles.id')
-                    ->select(
-                        'pharmacy_profiles.id as pharmacy_id',
-                        'pharmacy_profiles.location as pharmacy_location',
+            if ($dbMedicine) {
+                $haversine = "(6371 * acos(
+                    cos(radians(?)) 
+                    * cos(radians(pharmacy_profiles.latitude)) 
+                    * cos(radians(pharmacy_profiles.longitude) - radians(?)) 
+                    + sin(radians(?)) 
+                    * sin(radians(pharmacy_profiles.latitude))
+                ))";
+
+                $rows = DB::table('stock_batches')
+                    ->join('pharmacy_profiles', 'pharmacy_profiles.id', '=', 'stock_batches.pharmacy_id')
+                    ->join('medicines', 'medicines.id', '=', 'stock_batches.medicine_id')
+                    ->where('stock_batches.medicine_id', $dbMedicine->id)
+                    ->where('stock_batches.quantity', '>=', 0)
+                    ->selectRaw("
+                        pharmacy_profiles.id,
+                        pharmacy_profiles.location as pharmacy_location,
+                        pharmacy_profiles.latitude,
+                        pharmacy_profiles.longitude,
+                        pharmacy_profiles.contact_info,
+                        stock_batches.medicine_id,
+                        medicines.brand_name as medicine_name,
+                        medicines.price,
+                        medicines.active_ingredient_id,
+                        SUM(stock_batches.quantity) as quantity,
+                        {$haversine} AS distance
+                    ", [$lat, $lng, $lat])
+                    ->groupBy(
+                        'pharmacy_profiles.id',
+                        'pharmacy_profiles.location',
                         'pharmacy_profiles.latitude',
                         'pharmacy_profiles.longitude',
                         'pharmacy_profiles.contact_info',
-                        'stock_batches.quantity'
+                        'stock_batches.medicine_id',
+                        'medicines.brand_name',
+                        'medicines.price',
+                        'medicines.active_ingredient_id'
                     )
-                    ->where('stock_batches.medicine_id', $dbAlt->id)
-                    ->where('stock_batches.quantity', '>', 0)
+                    ->having('distance', '<=', $radius)
+                    ->orderBy('distance', 'asc')
+                    ->limit(10)
                     ->get();
 
-                $results[] = [
-                    'id' => $dbAlt->id,
-                    'name' => $dbAlt->brand_name,
-                    'price' => $dbAlt->price,
-                    'active_ingredient_id' => $dbAlt->active_ingredient_id,
-                    'pharmacies' => $pharmacies,
-                ];
+                if ($rows->isNotEmpty()) {
+                    $results = $results->merge($rows);
+                }
             } else {
                 $unavailable[] = [
                     'name' => $alt,
@@ -84,37 +98,49 @@ class AlternativeSearchController extends Controller
             }
         }
 
+        if ($results->isEmpty() && empty($unavailable)) {
+            return response()->json(['message' => 'No alternatives found'], 404);
+        }
+
+        // Transform results
+        $payload = $results->map(function ($row) {
+            return [
+                'pharmacy_id'   => $row->id,
+                'pharmacy_location' => $row->pharmacy_location,
+                'latitude'      => (float) $row->latitude,
+                'longitude'     => (float) $row->longitude,
+                'contact_info'  => $row->contact_info,
+                'medicine_id'   => $row->medicine_id,
+                'medicine_name' => $row->medicine_name,
+                'price'         => $row->price,
+                'active_ingredient_id' => $row->active_ingredient_id,
+                'quantity'      => (int) $row->quantity,
+                'distance_km'   => round((float) $row->distance, 2),
+            ];
+        });
+
         return response()->json([
             'query' => [
                 'name' => $medicine,
                 'user_drugs' => $userDrugs,
                 'lat' => $lat,
                 'lng' => $lng,
+                'radius_km' => $radius,
             ],
-            'results' => $results,
-            'unavailable' => $unavailable,
+            'matches' => $payload,
+            'unavailable' => $unavailable
         ]);
     }
 
-        /**
-         * Fetch alternatives from AI (Gemini API), with DB candidates included.
-         */
-        private function fetchAlternativesFromApi($medicine, $userDrugs, $dbCandidates = [])
+    private function fetchAlternativesFromApi($medicine, $userDrugs)
     {
         try {
             $prompt = "The user searched for {$medicine}. "
-                . "The user is already taking: " . implode(", ", $userDrugs) . ". ";
-
-            if (!empty($dbCandidates)) {
-                $prompt .= "The database contains the following possible alternatives: " 
-                    . implode(", ", $dbCandidates) . ". "
-                    . "Please validate which of these are safe alternatives. "
-                    . "If none are safe, exclude them. ";
-            }
-
-            $prompt .= "If needed, suggest  3 other safe alternatives. "
-                . "Do not include unsafe alternatives due to interactions. "
-                . "Return the answer strictly as a JSON array of medicine names like: [\"Alt1\", \"Alt2\", \"Alt3\"] "
+                . "The user is already taking: " . implode(", ", $userDrugs) . ". "
+                . "Suggest the 5 most famous medicine alternatives available in Egypt that can replace {$medicine}. "
+                . "Do not include unsafe alternatives due to drug interactions. "
+                . "Return the answer strictly as a JSON array of medicine names like: "
+                . "[\"Alt1\", \"Alt2\", \"Alt3\", \"Alt4\", \"Alt5\"]. "
                 . "If no safe alternatives exist, return [].";
 
 
@@ -124,7 +150,12 @@ class AlternativeSearchController extends Controller
                 "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" . env('GEMINI_API_KEY'),
                 [
                     'contents' => [
-                        ['parts' => [['text' => $prompt]]]
+                        [
+                            'role' => 'user',
+                            'parts' => [
+                                ['text' => $prompt]
+                            ]
+                        ]
                     ]
                 ]
             );
@@ -137,24 +168,18 @@ class AlternativeSearchController extends Controller
             $data = $response->json();
             $text = $data['candidates'][0]['content']['parts'][0]['text'] ?? '';
 
-            $alternatives = json_decode($text, true);
+            $text = preg_replace('/```json|```/i', '', $text);
+
+            $alternatives = json_decode(trim($text), true);
 
             if (!is_array($alternatives)) {
                 return [];
             }
 
-            $flat = [];
-            foreach ($alternatives as $item) {
-                if (is_string($item) && trim($item) !== '') {
-                    $flat[] = trim($item);
-                }
-            }
-
-            return array_values(array_unique($flat));
+            return array_values(array_filter(array_map('trim', $alternatives)));
         } catch (\Exception $e) {
             Log::error('Error fetching alternatives', ['error' => $e->getMessage()]);
             return [];
         }
     }
-
 }
