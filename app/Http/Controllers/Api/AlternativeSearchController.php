@@ -143,6 +143,7 @@ class AlternativeSearchController extends Controller
                 . "[\"Alt1\", \"Alt2\", \"Alt3\", \"Alt4\", \"Alt5\"]. "
                 . "If no safe alternatives exist, return [].";
 
+
             $response = Http::timeout(15)->withHeaders([
                 'Content-Type' => 'application/json',
             ])->post(

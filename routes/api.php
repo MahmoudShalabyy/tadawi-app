@@ -2,15 +2,14 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DonationController;
+use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\SearchController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InteractionController;
 use App\Http\Controllers\DrugInteractionController;
 use App\Http\Controllers\Api\AlternativeSearchController;
 use App\Http\Controllers\Api\PharmacyController;
-
-// Simple login route for testing
-Route::post('login', [AuthController::class, 'login']);
+use App\Http\Controllers\Api\CartController; // الكونترولر الجديد
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
@@ -40,12 +39,21 @@ Route::prefix('v1')->group(function () {
             Route::middleware('verified')->group(function () {
                 Route::post('update-role', [AuthController::class, 'updateRole']);
             });
+
+            // Cart routes
+            Route::get('/cart', [CartController::class, 'index']);
+            Route::post('/cart', [CartController::class, 'store'])->name('cart.add');
+            Route::put('/cart/{item}', [CartController::class, 'update'])->name('cart.update');
+            Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.remove');
+            Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+            Route::get('/cart/recommendations', [CartController::class, 'recommendations'])->name('cart.recommendations');
         });
 
         // Drug interaction routes
         Route::get('/suggest-drugs', [InteractionController::class, 'suggest']);
         Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
     });
+
 
     // search routes
     Route::middleware(['auth:sanctum'])->group(function () {
@@ -56,7 +64,15 @@ Route::prefix('v1')->group(function () {
         // Get all pharmacies
         Route::get('pharmacies', [PharmacyController::class, 'index']);
 
-        // Donation routes - require authentication
+       
+
+    // Donation routes - require authentication
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Medicines search (authenticated, minimal data)
+        Route::get('medicines/search', [MedicineController::class, 'search']);
+
+        // User's own donations
+
         Route::get('donations', [DonationController::class, 'index']);
         Route::post('donations', [DonationController::class, 'store']);
         Route::get('donations/{id}', [DonationController::class, 'show']);

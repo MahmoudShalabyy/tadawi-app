@@ -6,16 +6,55 @@ use App\Models\Donation;
 use App\Models\Medicine;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 
 class DonationRequest extends FormRequest
 {
     /**
+     * Normalize input before validation.
+     * Allows clients to send medicines[*][medicine_name] which will be
+     * resolved to medicines[*][medicine_id] if uniquely found by brand_name.
+     */
+    protected function prepareForValidation(): void
+    {
+        $medicines = $this->input('medicines', []);
+
+        if (is_array($medicines)) {
+            foreach ($medicines as $i => $item) {
+                $hasId = isset($item['medicine_id']) && is_numeric($item['medicine_id']);
+                $name = isset($item['medicine_name']) ? trim((string) $item['medicine_name']) : '';
+
+                if ($hasId || $name === '') {
+                    continue;
+                }
+
+                // Try exact match on brand_name first
+                $exact = Medicine::where('brand_name', $name)->value('id');
+                if ($exact) {
+                    $medicines[$i]['medicine_id'] = $exact;
+                    continue;
+                }
+
+                // Fallback: single partial match
+                $matches = Medicine::where('brand_name', 'like', "%{$name}%")
+                    ->limit(2)
+                    ->pluck('id');
+
+                if ($matches->count() === 1) {
+                    $medicines[$i]['medicine_id'] = $matches->first();
+                }
+            }
+        }
+
+        $this->merge(['medicines' => $medicines]);
+    }
+    /**
      * Determine if the user is authorized to make this request.
      */
     public function authorize(): bool
     {
-        return auth()->check();
+        return Auth::check();
     }
 
     /**
@@ -25,7 +64,7 @@ class DonationRequest extends FormRequest
      */
     public function rules(): array
     {
-        $userId = auth()->id();
+        $userId = Auth::id();
         $fourMonthsFromNow = now()->addMonths(4)->format('Y-m-d');
 
         return [
@@ -52,6 +91,11 @@ class DonationRequest extends FormRequest
                         $fail('You can only donate up to 3 medicines per week. You have already donated ' . $weeklyMedicineCount . ' medicine(s) this week.');
                     }
                 },
+            ],
+            'medicines.*.medicine_name' => [
+                'nullable',
+                'string',
+                'max:255',
             ],
             'medicines.*.medicine_id' => [
                 'required',
