@@ -117,6 +117,7 @@ class AlternativeSearchController extends Controller
                 . "Return the answer strictly as a JSON array of medicine names like: [\"Alt1\", \"Alt2\", \"Alt3\"] "
                 . "If no safe alternatives exist, return [].";
 
+
             $response = Http::timeout(15)->withHeaders([
                 'Content-Type' => 'application/json',
             ])->post(
