@@ -18,6 +18,8 @@ return new class extends Migration
             $table->enum('status', ['pending', 'processing', 'completed', 'cancelled'])->default('pending');
             $table->enum('payment_method', ['cash', 'paypal']);
             $table->string('billing_address')->nullable();
+            $table->integer('total_items')->default(0); // إضافة لتخزين العدد الكلي
+            $table->decimal('total_amount', 8, 2)->default(0.00); // إضافة لتخزين المجموع
             $table->timestamps();
 
             // Indexes for common queries

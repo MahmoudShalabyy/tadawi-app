@@ -55,6 +55,14 @@ class StockBatch extends Model
     {
         return $this->belongsTo(Medicine::class);
     }
+
+    /**
+     * Check if quantity is available for a given amount.
+     */
+    public function hasAvailable($quantity)
+    {
+        return $this->quantity >= $quantity;
+    }
 }
 
 

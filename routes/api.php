@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\SearchController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InteractionController;
 use App\Http\Controllers\DrugInteractionController;
+use App\Http\Controllers\Api\CartController; // أضف الكونترولر الجديد
 
 
 // Simple login route for testing
@@ -41,10 +42,19 @@ Route::prefix('v1')->group(function () {
         });
         //Route::post('/check-interaction', [InteractionController::class, 'check']);
         Route::get('/suggest-drugs', [InteractionController::class, 'suggest']);
-       Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
+        Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
         //search Route
         Route::get('/search', [SearchController::class, 'search']);
-
+        
+        // Add Cart routes
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::get('/cart', [CartController::class, 'index']);
+        Route::post('/cart', [CartController::class, 'store'])->name('cart.add'); // POST للـadd
+        Route::put('/cart/{item}', [CartController::class, 'update'])->name('cart.update');
+        Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.remove');
+        Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
+        Route::get('/cart/recommendations', [CartController::class, 'recommendations'])->name('cart.recommendations');
+    });
     });
 
     // Example of using the verified middleware for protected routes
