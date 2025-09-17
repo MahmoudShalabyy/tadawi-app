@@ -21,6 +21,7 @@ class MedicineResource extends JsonResource
             'dosage_strength' => $this->dosage_strength,
             'manufacturer' => $this->manufacturer,
             'price' => $this->price,
+            'status' => $this->status,
             'total_quantity' => $this->whenLoaded('stockBatches', function () {
                 return $this->stockBatches->sum('quantity');
             }),

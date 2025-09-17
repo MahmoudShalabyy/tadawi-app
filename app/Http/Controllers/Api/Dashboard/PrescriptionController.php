@@ -196,22 +196,43 @@ class PrescriptionController extends Controller
         }
     }
 
-    /**
-     * Delete a prescription upload and its associated image
-     */
     public function destroy(PrescriptionUpload $prescriptionUpload)
     {
         try {
-            // Delete the image file
-            $this->deleteImage($prescriptionUpload->file_path, 'prescriptions');
+            if ($prescriptionUpload->trashed()) {
+                return $this->error('Prescription is already deleted', 404);
+            }
 
-            // Delete the database record
             $prescriptionUpload->delete();
 
-            return $this->success(null, 'Prescription upload deleted successfully');
+            return $this->success(null, 'Prescription deleted successfully');
 
         } catch (\Exception $e) {
-            return $this->serverError('Failed to delete prescription upload: ' . $e->getMessage());
+            return $this->serverError('Failed to delete prescription: ' . $e->getMessage());
+        }
+    }
+
+    public function restore($id)
+    {
+        try {
+            $prescription = PrescriptionUpload::withTrashed()->find($id);
+
+            if (!$prescription) {
+                return $this->error('Prescription not found', 404);
+            }
+
+            if (!$prescription->trashed()) {
+                return $this->error('Prescription is not deleted', 400);
+            }
+
+            $prescription->restore();
+
+            $prescription->load(['order']);
+
+            return $this->success(new PrescriptionResource($prescription), 'Prescription restored successfully');
+
+        } catch (\Exception $e) {
+            return $this->serverError('Failed to restore prescription: ' . $e->getMessage());
         }
     }
 

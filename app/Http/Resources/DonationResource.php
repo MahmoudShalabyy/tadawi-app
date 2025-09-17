@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Resources\Dashboard;
+namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
@@ -16,16 +16,13 @@ class DonationResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'user_id' => $this->user_id,
-            'donor_name' => $this->user->name ?? null,
-            'location' => $this->location,
-            'contact_info' => $this->contact_info,
             'status' => $this->status,
+            'contact_info' => $this->contact_info,
             'sealed_confirmed' => $this->sealed_confirmed,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             
-            // User information
+            // User information (only include if user relationship is loaded)
             'user' => $this->whenLoaded('user', function () {
                 return [
                     'id' => $this->user->id,
@@ -40,11 +37,13 @@ class DonationResource extends JsonResource
                 return $this->medicines->map(function ($medicine) {
                     return [
                         'id' => $medicine->id,
+                        'name' => $medicine->name,
                         'brand_name' => $medicine->brand_name,
+                        'strength' => $medicine->strength,
                         'form' => $medicine->form,
-                        'dosage_strength' => $medicine->dosage_strength,
-                        'manufacturer' => $medicine->manufacturer,
-                        'price' => $medicine->price,
+                        'active_ingredients' => $medicine->active_ingredients->pluck('name'),
+                        'therapeutic_class' => $medicine->therapeuticClass->name ?? null,
+                        'image_url' => $medicine->image_url,
                         'quantity' => $medicine->pivot->quantity,
                         'expiry_date' => $medicine->pivot->expiry_date,
                         'batch_number' => $medicine->pivot->batch_num,
@@ -52,7 +51,7 @@ class DonationResource extends JsonResource
                 });
             }),
             
-            // Photos for admin review
+            // Photos information
             'photos' => $this->whenLoaded('photos', function () {
                 return $this->photos->map(function ($photo) {
                     return [
@@ -63,12 +62,12 @@ class DonationResource extends JsonResource
                 });
             }),
             
-            // Admin status information
+            // Status information
             'status_info' => [
                 'current' => $this->status,
-                'can_approve' => $this->status === 'under_review',
-                'can_reject' => in_array($this->status, ['proposed', 'under_review']),
-                'can_mark_collected' => $this->status === 'approved',
+                'can_update' => $this->status === 'proposed',
+                'can_cancel' => $this->status === 'proposed',
+                'is_available' => $this->status === 'approved',
             ],
         ];
     }

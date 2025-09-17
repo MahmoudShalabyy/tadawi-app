@@ -32,6 +32,7 @@ class Medicine extends Model
         'manufacturer',
         'price',
         'active_ingredient_id',
+        'status',
     ];
 
     /**
@@ -89,7 +90,7 @@ class Medicine extends Model
     /**
      * Pharmacies that have this medicine in stock (via stock_batches).
      */
-    
+
      public function pharmacies(): BelongsToMany
     {
         return $this->belongsToMany(PharmacyProfile::class, 'stock_batches', 'medicine_id', 'pharmacy_id')

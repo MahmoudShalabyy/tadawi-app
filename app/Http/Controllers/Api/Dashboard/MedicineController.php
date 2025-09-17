@@ -102,14 +102,21 @@ class MedicineController extends Controller
             // Use database transaction to ensure data consistency
             $updatedMedicine = DB::transaction(function () use ($medicine, $validatedData) {
                 // Update the medicine
-                $medicine->update([
-                    'brand_name' => $validatedData['brand_name'],
-                    'form' => $validatedData['form'],
-                    'dosage_strength' => $validatedData['dosage_strength'],
-                    'manufacturer' => $validatedData['manufacturer'],
-                    'price' => $validatedData['price'],
-                    'active_ingredient_id' => $validatedData['active_ingredient_id'],
-                ]);
+                $updateData = [
+                    'brand_name' => $validatedData['brand_name'] ?? $medicine->brand_name,
+                    'form' => $validatedData['form'] ?? $medicine->form,
+                    'dosage_strength' => $validatedData['dosage_strength'] ?? $medicine->dosage_strength,
+                    'manufacturer' => $validatedData['manufacturer'] ?? $medicine->manufacturer,
+                    'price' => $validatedData['price'] ?? $medicine->price,
+                    'active_ingredient_id' => $validatedData['active_ingredient_id'] ?? $medicine->active_ingredient_id,
+                ];
+
+                // Add status if provided
+                if (isset($validatedData['status'])) {
+                    $updateData['status'] = $validatedData['status'];
+                }
+
+                $medicine->update($updateData);
 
                 // Handle stock batch update if pharmacy_id and quantity are provided
                 if (isset($validatedData['pharmacy_id']) && isset($validatedData['quantity'])) {
