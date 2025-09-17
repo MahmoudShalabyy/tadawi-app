@@ -22,6 +22,9 @@ return new class extends Migration
             // Foreign key to active_ingredients
             $table->foreignId('active_ingredient_id')->constrained('active_ingredients')->onDelete('cascade');
 
+            $table->timestamps();
+            $table->softDeletes();
+
             // Indexes for common searches
             $table->index('brand_name', 'idx_medicines_brand');
             $table->index('price', 'idx_medicines_price');
