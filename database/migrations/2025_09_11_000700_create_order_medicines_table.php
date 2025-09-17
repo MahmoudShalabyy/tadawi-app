@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('order_id')->constrained()->onDelete('cascade');
             $table->foreignId('medicine_id')->constrained()->onDelete('cascade');
             $table->integer('quantity');
+            $table->decimal('price_at_time', 8, 2)->nullable(); // إضافة لتخزين سعر الوقت
             
             // Composite unique constraint
             $table->unique(['order_id', 'medicine_id'], 'uq_order_medicines_order_medicine');
