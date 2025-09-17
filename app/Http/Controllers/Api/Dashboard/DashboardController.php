@@ -138,7 +138,7 @@ class DashboardController extends Controller
                 ->get()
                 ->map(function ($pharmacy) {
                     return [
-                        'pharmacy_name' => $pharmacy->name,
+                        'pharmacy_name' => $pharmacy->name ?: $pharmacy->user->name ?: "Pharmacy #{$pharmacy->id}",
                         'low_stock_count' => $pharmacy->low_stock_count,
                         'pharmacy_id' => $pharmacy->id,
                     ];
@@ -461,7 +461,7 @@ class DashboardController extends Controller
             ->get()
             ->map(function ($pharmacy) {
                 return [
-                    'pharmacy_name' => $pharmacy->name,
+                    'pharmacy_name' => $pharmacy->name ?: $pharmacy->user->name ?: "Pharmacy #{$pharmacy->id}",
                     'low_stock_count' => $pharmacy->low_stock_count,
                     'pharmacy_id' => $pharmacy->id,
                 ];

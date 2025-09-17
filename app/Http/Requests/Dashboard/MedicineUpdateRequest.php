@@ -30,6 +30,7 @@ class MedicineUpdateRequest extends FormRequest
             'active_ingredient_id' => 'nullable|exists:active_ingredients,id',
             'pharmacy_id' => 'nullable|exists:pharmacy_profiles,user_id',
             'quantity' => 'nullable|integer|min:0',
+            'status' => 'nullable|in:active,inactive',
         ];
     }
 
