@@ -84,11 +84,13 @@ class AlternativeSearchController extends Controller
     private function fetchAlternativesFromApi($medicine, $userDrugs)
     {
         try {
-            $prompt = "The user searched for {$medicine}. "
-                    . "The user is already taking: " . implode(", ", $userDrugs) . ". "
-                    . "Suggest 3 safe alternative medicines that can replace {$medicine}. "
-                    . "Do not include any unsafe alternatives due to interactions. "
-                    . "Return the answer strictly as a JSON array of medicine names like: [\"Alt1\", \"Alt2\", \"Alt3\"]";
+            $prompt = "The user searched for {$medicine}. " 
+                . "The user is already taking: " . implode(", ", $userDrugs) . ". "
+                . "Suggest 3 safe alternative medicines that can replace {$medicine}. "
+                . "Do not include any unsafe alternatives due to interactions. "
+                . "If the medicine name is invalid, not recognized, or does not exist, "
+                . "return an empty JSON array []. "
+                . "Return the answer strictly as a JSON array of medicine names like: [\"Alt1\", \"Alt2\", \"Alt3\"]";
 
             $response = Http::timeout(15)->withHeaders([
                 'Content-Type' => 'application/json',

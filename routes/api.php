@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\InteractionController;
 use App\Http\Controllers\DrugInteractionController;
 use App\Http\Controllers\Api\AlternativeSearchController;
-
+use App\Http\Controllers\Api\PharmacyController;
 
 // Simple login route for testing
 Route::post('login', [AuthController::class, 'login']);
@@ -17,6 +17,9 @@ Route::post('login', [AuthController::class, 'login']);
 //search Route
 Route::get('/search', [SearchController::class, 'search']);
 Route::post('search/with-alternatives', [AlternativeSearchController::class, 'search']);
+
+//get all pharmacies
+Route::get('pharmacies', [PharmacyController::class, 'index']);
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
