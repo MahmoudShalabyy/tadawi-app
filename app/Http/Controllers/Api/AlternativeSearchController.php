@@ -29,17 +29,32 @@ class AlternativeSearchController extends Controller
             return response()->json(['error' => 'Medicine name is required'], 400);
         }
 
-        $alternatives = $this->fetchAlternativesFromApi($medicine, $userDrugs);
-
         $results = [];
         $unavailable = [];
+
+        $dbMedicine = Medicine::where('brand_name', 'like', "%{$medicine}%")->first();
+
+        if ($dbMedicine) {
+            $dbAlternatives = Medicine::where('active_ingredient_id', $dbMedicine->active_ingredient_id)
+                ->where('id', '!=', $dbMedicine->id)
+                ->pluck('brand_name')
+                ->toArray();
+
+            $aiAlternatives = $this->fetchAlternativesFromApi($medicine, $userDrugs, $dbAlternatives);
+
+        } else {
+            $aiAlternatives = $this->fetchAlternativesFromApi($medicine, $userDrugs, []);
+            $dbAlternatives = [];
+        }
+
+        $alternatives = array_unique(array_merge($dbAlternatives, $aiAlternatives));
 
         foreach ($alternatives as $alt) {
             if (!is_string($alt) || empty($alt)) continue;
 
-            $dbMedicine = Medicine::where('brand_name', 'like', "%{$alt}%")->first();
+            $dbAlt = Medicine::where('brand_name', 'like', "%{$alt}%")->first();
 
-            if ($dbMedicine) {
+            if ($dbAlt) {
                 $pharmacies = DB::table('stock_batches')
                     ->join('pharmacy_profiles', 'stock_batches.pharmacy_id', '=', 'pharmacy_profiles.id')
                     ->select(
@@ -50,21 +65,21 @@ class AlternativeSearchController extends Controller
                         'pharmacy_profiles.contact_info',
                         'stock_batches.quantity'
                     )
-                    ->where('stock_batches.medicine_id', $dbMedicine->id)
+                    ->where('stock_batches.medicine_id', $dbAlt->id)
                     ->where('stock_batches.quantity', '>', 0)
                     ->get();
 
                 $results[] = [
-                    'id' => $dbMedicine->id,
-                    'name' => $dbMedicine->brand_name,
-                    'price' => $dbMedicine->price,
-                    'active_ingredient_id' => $dbMedicine->active_ingredient_id,
+                    'id' => $dbAlt->id,
+                    'name' => $dbAlt->brand_name,
+                    'price' => $dbAlt->price,
+                    'active_ingredient_id' => $dbAlt->active_ingredient_id,
                     'pharmacies' => $pharmacies,
                 ];
             } else {
                 $unavailable[] = [
                     'name' => $alt,
-                    'description' => "AI suggested alternative (not in database)",
+                    'description' => "AI suggested alternative",
                 ];
             }
         }
@@ -81,16 +96,26 @@ class AlternativeSearchController extends Controller
         ]);
     }
 
-    private function fetchAlternativesFromApi($medicine, $userDrugs)
+        /**
+         * Fetch alternatives from AI (Gemini API), with DB candidates included.
+         */
+        private function fetchAlternativesFromApi($medicine, $userDrugs, $dbCandidates = [])
     {
         try {
-            $prompt = "The user searched for {$medicine}. " 
-                . "The user is already taking: " . implode(", ", $userDrugs) . ". "
-                . "Suggest 3 safe alternative medicines that can replace {$medicine}. "
-                . "Do not include any unsafe alternatives due to interactions. "
-                . "If the medicine name is invalid, not recognized, or does not exist, "
-                . "return an empty JSON array []. "
-                . "Return the answer strictly as a JSON array of medicine names like: [\"Alt1\", \"Alt2\", \"Alt3\"]";
+            $prompt = "The user searched for {$medicine}. "
+                . "The user is already taking: " . implode(", ", $userDrugs) . ". ";
+
+            if (!empty($dbCandidates)) {
+                $prompt .= "The database contains the following possible alternatives: " 
+                    . implode(", ", $dbCandidates) . ". "
+                    . "Please validate which of these are safe alternatives. "
+                    . "If none are safe, exclude them. ";
+            }
+
+            $prompt .= "If needed, suggest  3 other safe alternatives. "
+                . "Do not include unsafe alternatives due to interactions. "
+                . "Return the answer strictly as a JSON array of medicine names like: [\"Alt1\", \"Alt2\", \"Alt3\"] "
+                . "If no safe alternatives exist, return [].";
 
             $response = Http::timeout(15)->withHeaders([
                 'Content-Type' => 'application/json',
@@ -114,19 +139,13 @@ class AlternativeSearchController extends Controller
             $alternatives = json_decode($text, true);
 
             if (!is_array($alternatives)) {
-                if (preg_match('/\[(.*?)\]/s', $text, $matches)) {
-                    $alternatives = json_decode($matches[0], true);
-                }
-            }
-
-            if (!is_array($alternatives)) {
-                $alternatives = array_map('trim', explode(',', $text));
+                return [];
             }
 
             $flat = [];
             foreach ($alternatives as $item) {
-                if (is_string($item) && !empty($item)) {
-                    $flat[] = trim($item, "\"'[] ");
+                if (is_string($item) && trim($item) !== '') {
+                    $flat[] = trim($item);
                 }
             }
 
@@ -136,4 +155,5 @@ class AlternativeSearchController extends Controller
             return [];
         }
     }
+
 }
