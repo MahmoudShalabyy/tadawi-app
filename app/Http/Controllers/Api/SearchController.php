@@ -22,7 +22,8 @@ class SearchController extends Controller
         $lng  = (float) $data['lng'];
         $radius = 50;
 
-        $medicines = Medicine::where('brand_name', 'like', "%{$name}%")->get();
+        // Case-insensitive exact match
+        $medicines = Medicine::whereRaw('LOWER(brand_name) = ?', [strtolower($name)])->get();
 
         if ($medicines->isEmpty()) {
             return response()->json(['message' => 'medicine not found'], 404);
@@ -42,7 +43,7 @@ class SearchController extends Controller
             ->join('pharmacy_profiles', 'pharmacy_profiles.id', '=', 'stock_batches.pharmacy_id')
             ->join('medicines', 'medicines.id', '=', 'stock_batches.medicine_id')
             ->whereIn('stock_batches.medicine_id', $medicineIds)
-            ->where('stock_batches.quantity', '>', 0)
+            ->where('stock_batches.quantity', '>=', 0)
             ->selectRaw("
                 pharmacy_profiles.id,
                 pharmacy_profiles.location as pharmacy_location,

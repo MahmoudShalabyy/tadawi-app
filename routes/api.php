@@ -18,6 +18,7 @@ Route::post('login', [AuthController::class, 'login']);
 Route::get('/search', [SearchController::class, 'search']);
 Route::post('search/with-alternatives', [AlternativeSearchController::class, 'search']);
 
+
 // get all pharmacies
 Route::get('pharmacies', [PharmacyController::class, 'index']);
 
