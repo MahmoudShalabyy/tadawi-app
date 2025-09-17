@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\DonationController;
+use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\SearchController;
 
 use Illuminate\Support\Facades\Route;
@@ -58,6 +59,9 @@ Route::prefix('v1')->group(function () {
 
     // Donation routes - require authentication
     Route::middleware(['auth:sanctum'])->group(function () {
+        // Medicines search (authenticated, minimal data)
+        Route::get('medicines/search', [MedicineController::class, 'search']);
+
         // User's own donations
         Route::get('donations', [DonationController::class, 'index']);
         Route::post('donations', [DonationController::class, 'store']);
