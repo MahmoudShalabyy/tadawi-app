@@ -92,5 +92,5 @@ Route::prefix('v1')->group(function () {
     // Admin/Public routes for viewing all donations
     Route::get('donations-all', [DonationController::class, 'all']);
 
-
+ });
 });
