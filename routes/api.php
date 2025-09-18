@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\ConflictController;
 use App\Http\Controllers\Api\DonationController;
 use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\SearchController;
@@ -50,8 +51,8 @@ Route::prefix('v1')->group(function () {
         });
 
         // Drug interaction routes
-        Route::get('/suggest-drugs', [InteractionController::class, 'suggest']);
-        Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
+       // Route::get('/suggest-drugs', [InteractionController::class, 'suggest']);
+        //Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
     });
 
 
@@ -81,8 +82,15 @@ Route::prefix('v1')->group(function () {
 
         // Public donations (for searching)
         Route::get('donations-available', [DonationController::class, 'available']);
+
+        // Drug interaction check - requires authentication to access medical history
+        Route::post('interactions/check', [ConflictController::class, 'check']);
+        Route::get('/medicines', function () {return \App\Models\Medicine::pluck('brand_name');});
+
     });
 
     // Admin/Public routes for viewing all donations
     Route::get('donations-all', [DonationController::class, 'all']);
+
+
 });
