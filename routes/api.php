@@ -10,7 +10,7 @@ use App\Http\Controllers\InteractionController;
 use App\Http\Controllers\DrugInteractionController;
 use App\Http\Controllers\Api\AlternativeSearchController;
 use App\Http\Controllers\Api\PharmacyController;
-use App\Http\Controllers\Api\CartController; // الكونترولر الجديد
+use App\Http\Controllers\Api\CartController;
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
