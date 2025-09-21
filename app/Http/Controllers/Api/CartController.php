@@ -42,12 +42,7 @@ class CartController extends Controller
         
         $carts = $query->with([
             'medicines.medicine',
-            'pharmacy',
-            'medicines.stockBatch' => function ($query) use ($pharmacyId) {
-                if ($pharmacyId) {
-                    $query->where('pharmacy_id', $pharmacyId);
-                }
-            }
+            'pharmacy'
         ])->get();
 
         // Check for expired carts and clean them up
@@ -65,7 +60,15 @@ class CartController extends Controller
 
         
         $pharmacyIds = $carts->pluck('pharmacy_id')->unique();
-        $medicineIds = $carts->pluck('medicines')->flatten()->pluck('medicine_id')->unique()->filter();
+        
+        // Safely extract medicine IDs from carts
+        $medicineIds = collect();
+        foreach ($carts as $cart) {
+            if ($cart->medicines && $cart->medicines->isNotEmpty()) {
+                $medicineIds = $medicineIds->merge($cart->medicines->pluck('medicine_id'));
+            }
+        }
+        $medicineIds = $medicineIds->unique()->filter();
         
         if ($medicineIds->isNotEmpty() && $pharmacyIds->isNotEmpty()) {
             $stockData = StockBatch::whereIn('pharmacy_id', $pharmacyIds)
@@ -77,29 +80,45 @@ class CartController extends Controller
         }
 
         $carts->each(function ($cart) use ($stockData) {
-            $cart->medicines->each(function ($item) use ($cart, $stockData) {
-                // Null check for medicine_id and price_at_time
-                if (!$item->medicine_id || !$item->price_at_time) {
-                    $item->is_available = false;
-                    $item->stock_status = 'unknown';
-                    $item->available_stock = 0;
-                    $item->subtotal = 0;
-                    return; // Skip processing this item
+            try {
+                if ($cart->medicines && $cart->medicines->isNotEmpty()) {
+                    $cart->medicines->each(function ($item) use ($cart, $stockData) {
+                        try {
+                            // Validate item structure and required properties
+                            if (!$item || !property_exists($item, 'medicine_id') || !property_exists($item, 'price_at_time') || !property_exists($item, 'quantity')) {
+                                $item->is_available = false;
+                                $item->stock_status = 'unknown';
+                                $item->available_stock = 0;
+                                $item->subtotal = 0;
+                                return; // Skip processing this item
+                            }
+
+                            // Get stock from pre-loaded data instead of querying database
+                            $stock = $stockData->get($cart->pharmacy_id, collect())
+                                ->get($item->medicine_id);
+
+                            $item->is_available = $stock && $stock->quantity >= $item->quantity;
+                            $item->stock_status = $this->cartService->calculateStockStatus($stock, $item->quantity);
+                            
+                            $item->available_stock = $stock ? $stock->quantity : 0;
+                            $item->subtotal = $item->price_at_time * $item->quantity;
+                        } catch (\Exception $e) {
+                            // Handle individual item errors
+                            $item->is_available = false;
+                            $item->stock_status = 'error';
+                            $item->available_stock = 0;
+                            $item->subtotal = 0;
+                        }
+                    });
                 }
 
-                // Get stock from pre-loaded data instead of querying database
-                $stock = $stockData->get($cart->pharmacy_id, collect())
-                    ->get($item->medicine_id);
-
-                $item->is_available = $stock && $stock->quantity >= $item->quantity;
-                $item->stock_status = $this->cartService->calculateStockStatus($stock, $item->quantity);
-                
-                $item->available_stock = $stock ? $stock->quantity : 0;
-                $item->subtotal = $item->price_at_time * $item->quantity;
-            });
-
-            $cart->total_amount = $cart->medicines->sum('subtotal');
-            $cart->total_items = $cart->medicines->sum('quantity');
+                $cart->total_amount = $cart->medicines->sum('subtotal') ?? 0;
+                $cart->total_items = $cart->medicines->sum('quantity') ?? 0;
+            } catch (\Exception $e) {
+                // Handle cart-level errors
+                $cart->total_amount = 0;
+                $cart->total_items = 0;
+            }
         });
 
         return response()->json(['success' => true, 'data' => $carts]);
@@ -221,6 +240,13 @@ class CartController extends Controller
             $cart->save();
 
             $updatedCart = $cart->load(['medicines.medicine']);
+            
+            // Calculate totals for the response
+            $updatedCart->total_items = $updatedCart->medicines->sum('quantity') ?? 0;
+            $updatedCart->total_amount = $updatedCart->medicines->sum(function ($item) {
+                return $item->price_at_time * $item->quantity;
+            }) ?? 0;
+            
             return response()->json(['success' => true, 'message' => 'Added to cart', 'data' => $updatedCart]);
         });
     }
@@ -324,7 +350,6 @@ class CartController extends Controller
             $cartData = $cart ? $cart->load(['medicines.medicine']) : null;
             return response()->json(['success' => true, 'message' => 'Removed', 'data' => $cartData ?? []]);
         } catch (\Exception $e) {
-            \Log::error('Error removing cart item: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error removing item',
@@ -353,8 +378,7 @@ class CartController extends Controller
     }
     $cart = $cart->first();
 
-    // Safe logging with null checks
-    \Log::info('Clear Cart Query Result: ' . ($cart ? $cart->id : 'null') . ' for user_id: ' . $user->id . ' pharmacy_id: ' . ($pharmacyId ?: 'none'));
+    // Cart query completed
 
     if (!$cart) {
         return response()->json([
@@ -373,7 +397,6 @@ class CartController extends Controller
         
         return response()->json(['success' => true, 'message' => 'Cleared', 'data' => []]);
     } catch (\Exception $e) {
-        \Log::error('Error clearing cart: ' . $e->getMessage());
         return response()->json([
             'success' => false,
             'message' => 'Error clearing cart',

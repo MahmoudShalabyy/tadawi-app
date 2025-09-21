@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->foreignId('pharmacy_id')->constrained('pharmacy_profiles')->onDelete('cascade');
-            $table->enum('status', ['cart','pending', 'processing', 'completed', 'cancelled'])->default('pending');
+            $table->enum('status', ['cart', 'pending', 'processing', 'completed', 'cancelled'])->default('pending');
             $table->enum('payment_method', ['cash', 'paypal']);
             $table->string('billing_address')->nullable();
             $table->integer('total_items')->default(0); 

@@ -97,10 +97,10 @@ class Order extends Model
     {
         static::saving(function ($order) {
             if ($order->status === 'cart') {
-                $order->total_items = $order->medicines->sum('quantity');
+                $order->total_items = $order->medicines->sum('quantity') ?? 0;
                 $order->total_amount = $order->medicines->sum(function ($item) {
                     return $item->price_at_time * $item->quantity;
-                });
+                }) ?? 0;
 
                 if ($order->total_items > 10) {
                     throw new \Exception('Cart cannot contain more than 10 total items');
