@@ -45,10 +45,10 @@ Route::prefix('v1')->group(function () {
             // Cart routes
             Route::get('/cart', [CartController::class, 'index']);
             Route::post('/cart', [CartController::class, 'store'])->name('cart.add');
-            Route::put('/cart/{item}', [CartController::class, 'update'])->name('cart.update');
-            Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.remove');
             Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
             Route::get('/cart/recommendations', [CartController::class, 'recommendations'])->name('cart.recommendations');
+            Route::put('/cart/{item}', [CartController::class, 'update'])->name('cart.update');
+            Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.remove');
         });
 
         // Drug interaction routes
