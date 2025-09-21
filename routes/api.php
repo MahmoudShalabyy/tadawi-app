@@ -10,6 +10,7 @@ use App\Http\Controllers\InteractionController;
 use App\Http\Controllers\DrugInteractionController;
 use App\Http\Controllers\Api\AlternativeSearchController;
 use App\Http\Controllers\Api\PharmacyController;
+use App\Http\Controllers\Api\StockBatchController;
 use App\Http\Controllers\Api\CartController;
 
 Route::prefix('v1')->group(function () {
@@ -62,10 +63,27 @@ Route::prefix('v1')->group(function () {
         Route::get('search', [SearchController::class, 'search']);
         Route::post('search/with-alternatives', [AlternativeSearchController::class, 'search']);
 
-        // Get all pharmacies
+        // Pharmacy routes
         Route::get('pharmacies', [PharmacyController::class, 'index']);
+        Route::get('pharmacies/nearby', [PharmacyController::class, 'nearby']);
+        Route::get('pharmacies/my', [PharmacyController::class, 'myPharmacy']);
+        Route::get('pharmacies/{id}', [PharmacyController::class, 'show']);
+        Route::post('pharmacies', [PharmacyController::class, 'store']);
+        Route::put('pharmacies/{id}', [PharmacyController::class, 'update']);
+        Route::delete('pharmacies/{id}', [PharmacyController::class, 'destroy']);
 
-       
+        // Stock Batch routes
+        Route::get('stock-batches', [StockBatchController::class, 'index']);
+        Route::get('stock-batches/summary', [StockBatchController::class, 'summary']);
+        Route::get('stock-batches/expired', [StockBatchController::class, 'expired']);
+        Route::get('stock-batches/expiring-soon', [StockBatchController::class, 'expiringSoon']);
+        Route::get('stock-batches/low-stock', [StockBatchController::class, 'lowStock']);
+        Route::get('stock-batches/{id}', [StockBatchController::class, 'show']);
+        Route::post('stock-batches', [StockBatchController::class, 'store']);
+        Route::put('stock-batches/{id}', [StockBatchController::class, 'update']);
+        Route::delete('stock-batches/{id}', [StockBatchController::class, 'destroy']);
+
+
 
     // Donation routes - require authentication
     Route::middleware(['auth:sanctum'])->group(function () {

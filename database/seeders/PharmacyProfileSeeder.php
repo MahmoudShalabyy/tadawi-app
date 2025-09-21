@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\PharmacyProfile;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class PharmacyProfileSeeder extends Seeder
 {
@@ -13,59 +14,158 @@ class PharmacyProfileSeeder extends Seeder
      */
     public function run(): void
     {
-        // Get pharmacy users
-        $pharmacyUsers = User::where('role', 'pharmacy')->get();
+        $this->command->info('Creating comprehensive pharmacy profiles for testing...');
+
+        // Create comprehensive pharmacy users for testing
+        $pharmacyUsers = [
+            [
+                'name' => 'Cairo Central Pharmacy',
+                'email' => 'cairo.central@tadawi.com',
+                'password' => Hash::make('password'),
+                'phone_number' => '+201234567890',
+                'role' => 'pharmacy',
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Alexandria Medical Center',
+                'email' => 'alex.medical@tadawi.com',
+                'password' => Hash::make('password'),
+                'phone_number' => '+201234567891',
+                'role' => 'pharmacy',
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Giza Health Pharmacy',
+                'email' => 'giza.health@tadawi.com',
+                'password' => Hash::make('password'),
+                'phone_number' => '+201234567892',
+                'role' => 'pharmacy',
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Nasr City Pharmacy',
+                'email' => 'nasr.pharmacy@tadawi.com',
+                'password' => Hash::make('password'),
+                'phone_number' => '+201234567893',
+                'role' => 'pharmacy',
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Sharm El Sheikh Medical',
+                'email' => 'sharm.medical@tadawi.com',
+                'password' => Hash::make('password'),
+                'phone_number' => '+201234567894',
+                'role' => 'pharmacy',
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Luxor Central Pharmacy',
+                'email' => 'luxor.pharmacy@tadawi.com',
+                'password' => Hash::make('password'),
+                'phone_number' => '+201234567895',
+                'role' => 'pharmacy',
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Aswan Health Center',
+                'email' => 'aswan.health@tadawi.com',
+                'password' => Hash::make('password'),
+                'phone_number' => '+201234567896',
+                'role' => 'pharmacy',
+                'email_verified_at' => now(),
+            ],
+            [
+                'name' => 'Hurghada Medical Pharmacy',
+                'email' => 'hurghada.medical@tadawi.com',
+                'password' => Hash::make('password'),
+                'phone_number' => '+201234567897',
+                'role' => 'pharmacy',
+                'email_verified_at' => now(),
+            ],
+        ];
 
         $pharmacyProfiles = [
             [
-                'user_id' => $pharmacyUsers->where('email', 'cairo.central@tadawi.com')->first()->id,
-                'location' => 'Cairo, Egypt',
+                'location' => 'Downtown Cairo, Egypt',
                 'latitude' => 30.0444,
                 'longitude' => 31.2357,
-                'contact_info' => 'Phone: +20 2 2574 1234, Email: cairo.central@tadawi.com, Working Hours: 24/7',
+                'contact_info' => '+201234567890',
                 'verified' => true,
-                'rating' => 4.5,
+                'rating' => 4.8,
             ],
             [
-                'user_id' => $pharmacyUsers->where('email', 'alex.medical@tadawi.com')->first()->id,
                 'location' => 'Alexandria, Egypt',
                 'latitude' => 31.2001,
                 'longitude' => 29.9187,
-                'contact_info' => 'Phone: +20 3 4872 5678, Email: alex.medical@tadawi.com, Working Hours: 8:00 AM - 10:00 PM',
+                'contact_info' => '+201234567891',
                 'verified' => true,
                 'rating' => 4.2,
             ],
             [
-                'user_id' => $pharmacyUsers->where('email', 'giza.health@tadawi.com')->first()->id,
                 'location' => 'Giza, Egypt',
                 'latitude' => 30.0131,
                 'longitude' => 31.2089,
-                'contact_info' => 'Phone: +20 2 3570 9012, Email: giza.health@tadawi.com, Working Hours: 9:00 AM - 11:00 PM',
-                'verified' => true,
-                'rating' => 4.0,
+                'contact_info' => '+201234567892',
+                'verified' => false,
+                'rating' => 3.8,
             ],
             [
-                'user_id' => $pharmacyUsers->where('email', 'luxor.family@tadawi.com')->first()->id,
+                'location' => 'Nasr City, Cairo, Egypt',
+                'latitude' => 30.0626,
+                'longitude' => 31.2497,
+                'contact_info' => '+201234567893',
+                'verified' => true,
+                'rating' => 4.5,
+            ],
+            [
+                'location' => 'Sharm El Sheikh, Egypt',
+                'latitude' => 27.9158,
+                'longitude' => 34.3300,
+                'contact_info' => '+201234567894',
+                'verified' => true,
+                'rating' => 4.6,
+            ],
+            [
                 'location' => 'Luxor, Egypt',
                 'latitude' => 25.6872,
                 'longitude' => 32.6396,
-                'contact_info' => 'Phone: +20 95 2384 3456, Email: luxor.family@tadawi.com, Working Hours: 8:00 AM - 9:00 PM',
+                'contact_info' => '+201234567895',
                 'verified' => true,
-                'rating' => 4.3,
+                'rating' => 4.1,
             ],
             [
-                'user_id' => $pharmacyUsers->where('email', 'aswan.community@tadawi.com')->first()->id,
                 'location' => 'Aswan, Egypt',
                 'latitude' => 24.0889,
                 'longitude' => 32.8998,
-                'contact_info' => 'Phone: +20 97 2310 7890, Email: aswan.community@tadawi.com, Working Hours: 7:00 AM - 10:00 PM',
-                'verified' => false, // One unverified pharmacy for testing
-                'rating' => 3.8,
+                'contact_info' => '+201234567896',
+                'verified' => false,
+                'rating' => 3.9,
+            ],
+            [
+                'location' => 'Hurghada, Egypt',
+                'latitude' => 27.2574,
+                'longitude' => 33.8129,
+                'contact_info' => '+201234567897',
+                'verified' => true,
+                'rating' => 4.3,
             ],
         ];
 
-        foreach ($pharmacyProfiles as $profile) {
-            PharmacyProfile::create($profile);
+        // Get existing pharmacy users from UserSeeder
+        $existingPharmacyUsers = User::where('role', 'pharmacy')->get();
+
+        foreach ($existingPharmacyUsers as $index => $user) {
+            if ($index < count($pharmacyProfiles)) {
+                PharmacyProfile::create([
+                    'user_id' => $user->id,
+                    'location' => $pharmacyProfiles[$index]['location'],
+                    'latitude' => $pharmacyProfiles[$index]['latitude'],
+                    'longitude' => $pharmacyProfiles[$index]['longitude'],
+                    'contact_info' => $pharmacyProfiles[$index]['contact_info'],
+                    'verified' => $pharmacyProfiles[$index]['verified'],
+                    'rating' => $pharmacyProfiles[$index]['rating'],
+                ]);
+            }
         }
     }
 }
