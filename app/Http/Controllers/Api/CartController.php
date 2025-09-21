@@ -350,7 +350,6 @@ class CartController extends Controller
             $cartData = $cart ? $cart->load(['medicines.medicine']) : null;
             return response()->json(['success' => true, 'message' => 'Removed', 'data' => $cartData ?? []]);
         } catch (\Exception $e) {
-            \Log::error('Error removing cart item: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error removing item',
@@ -379,8 +378,7 @@ class CartController extends Controller
     }
     $cart = $cart->first();
 
-    // Safe logging with null checks
-    \Log::info('Clear Cart Query Result: ' . ($cart ? $cart->id : 'null') . ' for user_id: ' . $user->id . ' pharmacy_id: ' . ($pharmacyId ?: 'none'));
+    // Cart query completed
 
     if (!$cart) {
         return response()->json([
@@ -399,7 +397,6 @@ class CartController extends Controller
         
         return response()->json(['success' => true, 'message' => 'Cleared', 'data' => []]);
     } catch (\Exception $e) {
-        \Log::error('Error clearing cart: ' . $e->getMessage());
         return response()->json([
             'success' => false,
             'message' => 'Error clearing cart',
