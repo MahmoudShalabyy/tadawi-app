@@ -94,3 +94,10 @@ Route::prefix('v1')->group(function () {
 
  });
 });
+Route::get('/test', function () {
+    return response()->json([
+        'status' => 'success',
+        'message' => 'API is working fine 🚀'
+    ]);
+});
+
