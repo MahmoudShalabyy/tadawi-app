@@ -1,9 +1,12 @@
 #!/bin/bash
 echo "Waiting for MySQL to be ready..."
-sleep 15  # يعطي وقت للـ DB يشتغل
+sleep 10
+
 echo "Running migrations..."
-php artisan migrate --force
+php artisan migrate --force || { echo "Migration failed"; exit 1; }
+
 echo "Linking storage..."
-php artisan storage:link
+php artisan storage:link || { echo "Storage link failed"; exit 1; }
+
 echo "Starting Laravel server..."
-vendor/bin/heroku-php-apache2 public/
+php artisan serve --host=0.0.0.0 --port=$PORT
