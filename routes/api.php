@@ -47,13 +47,6 @@ Route::prefix('v1')->group(function () {
             Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
             Route::get('/cart/recommendations', [CartController::class, 'recommendations'])->name('cart.recommendations');
 
-            // Checkout routes
-            Route::get('/checkout/validate/{pharmacy_id}', [CheckoutController::class, 'validateCart'])->name('checkout.validate');
-            Route::get('/checkout/summary/{pharmacy_id}', [CheckoutController::class, 'getSummary'])->name('checkout.summary');
-            Route::post('/checkout/initiate/{pharmacy_id}', [CheckoutController::class, 'initiate'])->name('checkout.initiate');
-            Route::post('/checkout/paypal/{pharmacy_id}', [CheckoutController::class, 'processPayPal'])->name('checkout.paypal');
-            Route::get('/checkout/payment-status/{order_id}', [CheckoutController::class, 'getPaymentStatus'])->name('checkout.payment-status');
-            Route::get('/checkout/paypal/config', [CheckoutController::class, 'getPayPalConfig'])->name('checkout.paypal.config');
         });
 
         // Drug interaction routes
@@ -67,6 +60,14 @@ Route::prefix('v1')->group(function () {
         // Search routes
         Route::get('search', [SearchController::class, 'search']);
         Route::post('search/with-alternatives', [AlternativeSearchController::class, 'search']);
+
+        // Checkout routes
+        Route::get('checkout/validate/{pharmacy_id}', [CheckoutController::class, 'validateCart'])->name('checkout.validate');
+        Route::get('checkout/summary/{pharmacy_id}', [CheckoutController::class, 'getSummary'])->name('checkout.summary');
+        Route::post('checkout/initiate/{pharmacy_id}', [CheckoutController::class, 'initiate'])->name('checkout.initiate');
+        Route::post('checkout/paypal/{pharmacy_id}', [CheckoutController::class, 'processPayPal'])->name('checkout.paypal');
+        Route::get('checkout/payment-status/{order_id}', [CheckoutController::class, 'getPaymentStatus'])->name('checkout.payment-status');
+        Route::get('checkout/paypal/config', [CheckoutController::class, 'getPayPalConfig'])->name('checkout.paypal.config');
 
         // Pharmacy routes
         Route::get('pharmacies', [PharmacyController::class, 'index']);

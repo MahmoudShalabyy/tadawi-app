@@ -27,9 +27,9 @@ class CheckoutRequest extends FormRequest
             'shipping_address' => 'nullable|string|max:500',
             'phone' => 'required|string|max:20',
             'notes' => 'nullable|string|max:1000',
-            'prescription_required' => 'boolean',
-            'prescription_files' => 'nullable|array|max:5',
-            'prescription_files.*' => 'file|mimes:jpg,jpeg,png,pdf|max:5120', // 5MB max per file
+            'prescription_required' => 'required|boolean',
+            'prescription_files' => 'required_if:prescription_required,true|array|min:1|max:3',
+            'prescription_files.*' => 'required|file|mimes:jpg,jpeg,png,pdf,doc,docx|max:5120',
         ];
     }
 
@@ -53,13 +53,24 @@ class CheckoutRequest extends FormRequest
             'phone.max' => 'Phone number cannot exceed 20 characters',
             'notes.string' => 'Notes must be a string',
             'notes.max' => 'Notes cannot exceed 1000 characters',
-            'prescription_required.boolean' => 'Prescription required must be true or false',
-            'prescription_files.array' => 'Prescription files must be an array',
-            'prescription_files.max' => 'Maximum 5 prescription files allowed',
-            'prescription_files.*.file' => 'Each prescription file must be a valid file',
-            'prescription_files.*.mimes' => 'Prescription files must be JPG, JPEG, PNG, or PDF',
+            'prescription_files.required_if' => 'Prescription files are required when prescription is needed',
+            'prescription_files.max' => 'Maximum 3 prescription files allowed',
+            'prescription_files.*.mimes' => 'Prescription files must be JPG, JPEG, PNG, PDF, DOC, or DOCX',
             'prescription_files.*.max' => 'Each prescription file cannot exceed 5MB',
         ];
+    }
+
+    /**
+     * Prepare the data for validation.
+     */
+    protected function prepareForValidation()
+    {
+        // Convert string boolean to actual boolean
+        if ($this->has('prescription_required')) {
+            $this->merge([
+                'prescription_required' => filter_var($this->prescription_required, FILTER_VALIDATE_BOOLEAN)
+            ]);
+        }
     }
 
     /**
@@ -79,4 +90,5 @@ class CheckoutRequest extends FormRequest
             'prescription_files' => 'prescription files',
         ];
     }
+
 }

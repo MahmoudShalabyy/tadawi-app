@@ -97,9 +97,9 @@ class CartController extends Controller
                             $stock = $stockData->get($cart->pharmacy_id, collect())
                                 ->get($item->medicine_id);
 
+                            // Add computed fields for display (not saved to DB)
                             $item->is_available = $stock && $stock->quantity >= $item->quantity;
                             $item->stock_status = $this->cartService->calculateStockStatus($stock, $item->quantity);
-                            
                             $item->available_stock = $stock ? $stock->quantity : 0;
                             $item->subtotal = $item->price_at_time * $item->quantity;
                         } catch (\Exception $e) {
@@ -112,12 +112,17 @@ class CartController extends Controller
                     });
                 }
 
+                // Calculate and save totals to database
                 $cart->total_amount = $cart->medicines->sum('subtotal') ?? 0;
                 $cart->total_items = $cart->medicines->sum('quantity') ?? 0;
+                
+                // Save the updated totals to the database
+                $cart->save();
             } catch (\Exception $e) {
                 // Handle cart-level errors
                 $cart->total_amount = 0;
                 $cart->total_items = 0;
+                $cart->save();
             }
         });
 

@@ -8,12 +8,15 @@ use App\Models\StockBatch;
 use App\Models\Medicine;
 use App\Models\PharmacyProfile;
 use App\Models\User;
+use App\Traits\ImageHandling;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Carbon\Carbon;
 
 class CheckoutService
 {
+    use ImageHandling;
+    
     protected CartService $cartService;
 
     public function __construct(CartService $cartService)
@@ -80,9 +83,7 @@ class CheckoutService
             return [
                 'valid' => true,
                 'message' => 'Cart is ready for checkout',
-                'cart' => $cart,
-                'total_amount' => $this->calculateOrderTotals($cart)['total_amount'],
-                'total_items' => $this->calculateOrderTotals($cart)['total_items']
+                'cart' => $cart
             ];
 
         } catch (\Exception $e) {
@@ -135,15 +136,15 @@ class CheckoutService
                 // Update stock after successful order creation (placeholder)
                 $this->updateStockAfterOrder($order);
 
-                // Delete the cart
+                // Delete cart after successful order creation
                 $cart->medicines()->delete();
                 $cart->delete();
 
-                Log::info("Checkout successful for cart {$cartId}, order {$order->id}");
+                Log::info("Checkout initiated for cart {$cartId}, order {$order->id}");
 
                 return [
                     'success' => true,
-                    'message' => 'Checkout completed successfully',
+                    'message' => 'Checkout initiated successfully',
                     'order' => $order,
                     'order_id' => $order->id
                 ];
@@ -164,21 +165,29 @@ class CheckoutService
      */
     public function calculateOrderTotals(Order $cart): array
     {
-        $totalAmount = 0;
+        $subtotal = 0;
         $totalItems = 0;
 
         foreach ($cart->medicines as $item) {
-            $subtotal = $item->price_at_time * $item->quantity;
-            $totalAmount += $subtotal;
+            $itemSubtotal = $item->price_at_time * $item->quantity;
+            $subtotal += $itemSubtotal;
             $totalItems += $item->quantity;
         }
 
+        // Calculate tax (14%)
+        $tax = 14/100 * $subtotal;
+        
+        // Calculate shipping (30 EGP)
+        $shipping = 30;
+        
+        $total = $subtotal + $tax + $shipping;
+
         return [
-            'total_amount' => round($totalAmount, 2),
+            'total_amount' => round($total, 2),
             'total_items' => $totalItems,
-            'subtotal' => $totalAmount,
-            'tax' => 0, // Can be added later
-            'shipping' => 0, // Can be added later
+            'subtotal' => round($subtotal, 2),
+            'tax' => round($tax, 2),
+            'shipping' => round($shipping, 2),
         ];
     }
 
@@ -282,6 +291,11 @@ class CheckoutService
                 ]);
             }
 
+            // Process prescription files if required
+            if (isset($checkoutData['prescription_required']) && $checkoutData['prescription_required'] && isset($checkoutData['prescription_files'])) {
+                $this->processPrescriptionFiles($order, $checkoutData['prescription_files']);
+            }
+
             return $order;
 
         } catch (\Exception $e) {
@@ -306,8 +320,18 @@ class CheckoutService
 
         return [
             'success' => true,
-            'cart' => $cart,
-            'pharmacy' => $cart->pharmacy,
+            'cart' => [
+                'id' => $cart->id,
+                'user_id' => $cart->user_id,
+                'pharmacy_id' => $cart->pharmacy_id,
+                'status' => $cart->status
+            ],
+            'pharmacy' => [
+                'id' => $cart->pharmacy->id,
+                'name' => $cart->pharmacy->location ?? 'Unknown Pharmacy',
+                'address' => $cart->pharmacy->location ?? 'Unknown Address',
+                'phone' => $cart->pharmacy->contact_info ?? 'Unknown Phone'
+            ],
             'medicines' => $cart->medicines->map(function ($item) {
                 return [
                     'id' => $item->medicine_id,
@@ -370,6 +394,24 @@ class CheckoutService
             return ['success' => true, 'message' => 'Stock updated'];
         } catch (\Exception $e) {
             return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    /**
+     * Process prescription files for an order
+     */
+    protected function processPrescriptionFiles(Order $order, array $prescriptionFiles): void
+    {
+        foreach ($prescriptionFiles as $file) {
+            if ($file && $file->isValid()) {
+                $filename = $this->uploadImage($file, 'prescriptions', 'prescription');
+                
+                $order->prescriptionUploads()->create([
+                    'file_path' => $filename,
+                    'ocr_text' => null,
+                    'validated_by_doctor' => false,
+                ]);
+            }
         }
     }
 }

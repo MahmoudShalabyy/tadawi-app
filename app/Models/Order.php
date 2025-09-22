@@ -23,8 +23,8 @@ class Order extends Model
         'status',
         'payment_method',
         'billing_address',
-        'total_items', // إضافة لتخزين العدد الكلي
-        'total_amount', // إضافة لتخزين المجموع
+        'total_items', 
+        'total_amount', 
     ];
 
     /**
@@ -97,6 +97,11 @@ class Order extends Model
     {
         static::saving(function ($order) {
             if ($order->status === 'cart') {
+                // Load medicines if not already loaded
+                if (!$order->relationLoaded('medicines')) {
+                    $order->load('medicines');
+                }
+                
                 $order->total_items = $order->medicines->sum('quantity') ?? 0;
                 $order->total_amount = $order->medicines->sum(function ($item) {
                     return $item->price_at_time * $item->quantity;
@@ -187,10 +192,10 @@ class Order extends Model
         $totalItems = $this->medicines->sum('quantity');
         
         // Calculate tax (can be added later)
-        $tax = 0;
+        $tax = 14/100 * $subtotal;
         
         // Calculate shipping (can be added later)
-        $shipping = 0;
+        $shipping = 30;
         
         $total = $subtotal + $tax + $shipping;
 
@@ -201,6 +206,25 @@ class Order extends Model
             'total' => round($total, 2),
             'total_items' => $totalItems,
         ];
+    }
+
+    /**
+     * Recalculate and update order totals
+     */
+    public function recalculateTotals(): bool
+    {
+        if ($this->status === 'cart') {
+            $totals = $this->calculateTotals();
+            
+            $this->update([
+                'total_items' => $totals['total_items'],
+                'total_amount' => $totals['total']
+            ]);
+            
+            return true;
+        }
+        
+        return false;
     }
 
     /**
@@ -288,10 +312,10 @@ class Order extends Model
             return false;
         }
 
-        // Check if pharmacy is active (add status field if needed)
-        // if ($this->pharmacy->status !== 'active') {
-        //     return false;
-        // }
+        // Check if pharmacy is active
+        if ($this->pharmacy->status !== 'active') {
+            return false;
+        }
 
         return true;
     }
