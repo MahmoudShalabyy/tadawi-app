@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'default' => env('MAIL_MAILER', 'log'),
+    'default' => env('MAIL_MAILER', 'brevo'),
 
     /*
     |--------------------------------------------------------------------------
@@ -97,6 +97,13 @@ return [
             'retry_after' => 60,
         ],
 
+        'brevo' => [
+            'transport' => 'api',
+            'host' => 'api.brevo.com',
+            'api_key' => env('MAIL_PASSWORD'),
+            'timeout' => 30,
+        ],
+
     ],
 
     /*
@@ -111,8 +118,8 @@ return [
     */
 
     'from' => [
-        'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
-        'name' => env('MAIL_FROM_NAME', 'Example'),
+        'address' => env('MAIL_FROM_ADDRESS', 'mahmoudshalabyy4@gmail.com'),
+        'name' => env('MAIL_FROM_NAME', 'Tadawi App'),
     ],
 
 ];
