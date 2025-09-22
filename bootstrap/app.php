@@ -23,7 +23,12 @@ return Application::configure(basePath: dirname(__DIR__))
             'verified' => \App\Http\Middleware\EnsureEmailIsVerified::class,
             'EnsureAdmin' => \App\Http\Middleware\EnsureAdmin::class,
         ]);
+
+        // Configure Sanctum middleware if needed
+        // $middleware->api(prepend: [
+        //     \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        // ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
-    })->create();
+    })
+    ->create();
