@@ -353,26 +353,26 @@ class AuthService
 
 
 
-private function sendOtpEmail(string $email, string $otpCode): void
+private function sendOtpEmail(string $email): void
 {
     try {
-        // إعداد الـ API
-        $apiKey = getenv('MAIL_PASSWORD'); // أو env('MAIL_PASSWORD') لو env متاحة
-        $fromEmail = getenv('MAIL_FROM_ADDRESS') ?: 'itiprojects7@gmail.com';
-        $fromName = getenv('MAIL_FROM_NAME') ?: 'Tadawi App';
+        $otpRecord = Otp::generateOtp($email, 'verification');
+        $otpCode = $otpRecord->getPlainOtp();
 
-        $config = Configuration::getDefaultConfiguration()->setApiKey('api-key', $apiKey);
-        $apiInstance = new TransactionalEmailsApi(new GuzzleClient(), $config);
+        $config = \Brevo\Client\Configuration::getDefaultConfiguration()->setApiKey('api-key', getenv('MAIL_PASSWORD'));
+        $apiInstance = new \Brevo\Client\Api\TransactionalEmailsApi(new \GuzzleHttp\Client(), $config);
 
-        $sendSmtpEmail = new SendSmtpEmail();
-        $sendSmtpEmail->setSender(['name' => $fromName, 'email' => $fromEmail]);
+        $sendSmtpEmail = new \Brevo\Client\Model\SendSmtpEmail();
+        $sendSmtpEmail->setSender([
+            'name' => getenv('MAIL_FROM_NAME') ?: 'Tadawi App',
+            'email' => getenv('MAIL_FROM_ADDRESS') ?: 'itiprojects7@gmail.com'
+        ]);
         $sendSmtpEmail->setTo([['email' => $email, 'name' => 'Recipient']]);
         $sendSmtpEmail->setSubject('Tadawi - Email Verification Code');
         $sendSmtpEmail->setHtmlContent("<p>Your OTP is: {$otpCode}</p>");
 
         $apiInstance->sendTransacEmail($sendSmtpEmail);
 
-        // Log في التطوير
         if (app()->environment('local')) {
             Log::info("OTP for {$email}: {$otpCode}");
         }
@@ -383,4 +383,6 @@ private function sendOtpEmail(string $email, string $otpCode): void
         ]);
     }
 }
+
+
 }
