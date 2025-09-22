@@ -11,6 +11,8 @@ use App\Http\Controllers\DrugInteractionController;
 use App\Http\Controllers\Api\AlternativeSearchController;
 use App\Http\Controllers\Api\PharmacyController;
 use App\Http\Controllers\Api\CartController;
+use Illuminate\Support\Facades\Artisan;
+
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
@@ -93,4 +95,9 @@ Route::prefix('v1')->group(function () {
     Route::get('donations-all', [DonationController::class, 'all']);
 
  });
+
+Route::get('/test-mail', function () {
+    Artisan::call('mail:test', ['email' => 'yourpersonalemail@gmail.com']);
+    return 'Mail command executed';
+});
 });
