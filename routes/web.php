@@ -11,3 +11,11 @@ Route::get('/migrate', function () {
     \Artisan::call('storage:link');
     return 'Migrations run successfully!';
 });
+
+Route::get('/send-mail', function () {
+    Mail::raw("Test email", function ($message) {
+        $message->to("itiprojects7@gmail.com")->subject("Test");
+    });
+
+    return "Mail sent!";
+});
