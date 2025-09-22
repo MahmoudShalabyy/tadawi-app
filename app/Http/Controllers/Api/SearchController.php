@@ -42,10 +42,12 @@ class SearchController extends Controller
         $results = DB::table('stock_batches')
             ->join('pharmacy_profiles', 'pharmacy_profiles.id', '=', 'stock_batches.pharmacy_id')
             ->join('medicines', 'medicines.id', '=', 'stock_batches.medicine_id')
+            ->join('users', 'users.id', '=', 'pharmacy_profiles.user_id') // Join users to get pharmacy name
             ->whereIn('stock_batches.medicine_id', $medicineIds)
             ->where('stock_batches.quantity', '>=', 0)
             ->selectRaw("
                 pharmacy_profiles.id,
+                users.name as pharmacy_name,           
                 pharmacy_profiles.location as pharmacy_location,
                 pharmacy_profiles.latitude,
                 pharmacy_profiles.longitude,
@@ -59,6 +61,7 @@ class SearchController extends Controller
             ", [$lat, $lng, $lat])
             ->groupBy(
                 'pharmacy_profiles.id',
+                'users.name',                         // Group by pharmacy name
                 'pharmacy_profiles.location',
                 'pharmacy_profiles.latitude',
                 'pharmacy_profiles.longitude',
@@ -80,6 +83,7 @@ class SearchController extends Controller
         $payload = $results->map(function ($row) {
             return [
                 'pharmacy_id'   => $row->id,
+                'pharmacy_name' => $row->pharmacy_name, 
                 'pharmacy_location' => $row->pharmacy_location,
                 'latitude'      => (float) $row->latitude,
                 'longitude'     => (float) $row->longitude,

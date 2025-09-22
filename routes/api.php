@@ -12,6 +12,8 @@ use App\Http\Controllers\Api\StockBatchController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\OrderController;
+use App\Http\Controllers\MedicineCorrectionController;
+
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
@@ -55,11 +57,11 @@ Route::prefix('v1')->group(function () {
         //Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
     });
 
-
+    Route::get('search', [SearchController::class, 'search']);
     // search routes
     Route::middleware(['auth:sanctum'])->group(function () {
         // Search routes
-        Route::get('search', [SearchController::class, 'search']);
+
         Route::post('search/with-alternatives', [AlternativeSearchController::class, 'search']);
 
         // Checkout routes
@@ -95,7 +97,16 @@ Route::prefix('v1')->group(function () {
         Route::put('stock-batches/{id}', [StockBatchController::class, 'update']);
         Route::delete('stock-batches/{id}', [StockBatchController::class, 'destroy']);
 
+         // Pharmacy medicine management routes (Pharmacy can only add, not update medicines)
+         Route::post('pharmacies/medicines/add', [PharmacyController::class, 'addMedicine']);
+         Route::post('pharmacies/medicines/confirm-correction', [PharmacyController::class, 'confirmMedicineCorrection']);
+         Route::get('pharmacies/medicines', [PharmacyController::class, 'getMedicines']);
+         Route::get('pharmacies/medicines/suggestions', [PharmacyController::class, 'getMedicineSuggestions']);
 
+        // Medicine Correction routes
+        Route::post('medicine-correction/correct', [MedicineCorrectionController::class, 'correctMedicine']);
+        Route::get('medicine-correction/autocomplete', [MedicineCorrectionController::class, 'autocomplete']);
+        Route::post('medicine-correction/validate', [MedicineCorrectionController::class, 'validateForSave']);
 
     // Donation routes - require authentication
     Route::middleware(['auth:sanctum'])->group(function () {

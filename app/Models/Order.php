@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
 
+
 class Order extends Model
 {
     use HasFactory, SoftDeletes;
@@ -43,6 +44,13 @@ class Order extends Model
         'total_items' => 'integer',
         'total_amount' => 'decimal:2',
         'currency' => 'string',
+    ];
+
+    /**
+     * Attributes to append to model's array/json form.
+     */
+    protected $appends = [
+        'pharmacy_name',
     ];
 
     /**
@@ -80,9 +88,19 @@ class Order extends Model
     /**
      * Get the payments for this order.
      */
+
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
+    }
+
+    /**
+     * Accessor for pharmacy_name derived from related pharmacy's user name.
+     */
+    public function getPharmacyNameAttribute(): ?string
+    {
+        return data_get($this, 'pharmacy.user.name');
+
     }
 
     /**
@@ -383,6 +401,7 @@ class Order extends Model
     /**
      * Add prescription to order
      */
+
     public function addPrescription(array $prescriptionData): bool
     {
         try {
@@ -391,7 +410,7 @@ class Order extends Model
                 'file_name' => $prescriptionData['file_name'],
                 'file_size' => $prescriptionData['file_size'],
                 'mime_type' => $prescriptionData['mime_type'],
-                'uploaded_by' => Auth::id(),
+                'uploaded_by' => optional(auth()->user())->id,
             ]);
 
             return true;
@@ -400,6 +419,7 @@ class Order extends Model
             return false;
         }
     }
+
 
     // ========================================
     // ORDER QUERY SCOPES
@@ -461,9 +481,9 @@ class Order extends Model
             'id' => $this->id,
             'status' => $this->status,
             'pharmacy' => [
-                'id' => $this->pharmacy->id,
-                'name' => $this->pharmacy->name ?? 'Unknown Pharmacy',
-                'location' => $this->pharmacy->location ?? 'Unknown Location',
+                'id' => data_get($this, 'pharmacy.id'),
+                'name' => data_get($this, 'pharmacy_name', 'Unknown Pharmacy'),
+                'location' => data_get($this, 'pharmacy.location', 'Unknown Location'),
             ],
             'medicines' => $this->medicines->map(function ($item) {
                 return [
