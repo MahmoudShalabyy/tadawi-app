@@ -16,7 +16,7 @@ Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
         // Public routes
         Route::post('register', [AuthController::class, 'register']);
-        Route::post('login', [AuthController::class, 'login']);
+        Route::post('login', [AuthController::class, 'login'])->name('login');
 
         // OTP routes - accessible both publicly and for authenticated users
         Route::post('verify-otp', [AuthController::class, 'verifyOtp']);
@@ -51,53 +51,33 @@ Route::prefix('v1')->group(function () {
         });
 
         // Drug interaction routes
-       // Route::get('/suggest-drugs', [InteractionController::class, 'suggest']);
-        //Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
+        // Route::get('/suggest-drugs', [InteractionController::class, 'suggest']);
+        // Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
     });
 
+    // Search routes (remove auth:sanctum temporarily for testing)
+    Route::get('search', [SearchController::class, 'search']);
+    Route::post('search/with-alternatives', [AlternativeSearchController::class, 'search']);
+    Route::get('pharmacies', [PharmacyController::class, 'index']);
 
-    // search routes
-    Route::middleware(['auth:sanctum'])->group(function () {
-        // Search routes
-        Route::get('search', [SearchController::class, 'search']);
-        Route::post('search/with-alternatives', [AlternativeSearchController::class, 'search']);
-
-        // Get all pharmacies
-        Route::get('pharmacies', [PharmacyController::class, 'index']);
-
-       
-
-    // Donation routes - require authentication
-    Route::middleware(['auth:sanctum'])->group(function () {
-        // Medicines search (authenticated, minimal data)
-        Route::get('medicines/search', [MedicineController::class, 'search']);
-
-        // User's own donations
-
-        Route::get('donations', [DonationController::class, 'index']);
-        Route::post('donations', [DonationController::class, 'store']);
-        Route::get('donations/{id}', [DonationController::class, 'show']);
-        Route::put('donations/{id}', [DonationController::class, 'update']);
-        Route::delete('donations/{id}', [DonationController::class, 'destroy']);
-
-        // Public donations (for searching)
-        Route::get('donations-available', [DonationController::class, 'available']);
-
-        // Drug interaction check - requires authentication to access medical history
-        Route::post('interactions/check', [ConflictController::class, 'check']);
-        Route::get('/medicines', function () {return \App\Models\Medicine::pluck('brand_name');});
-
-    });
-
-    // Admin/Public routes for viewing all donations
+    // Donation routes (remove auth:sanctum temporarily for testing)
+    Route::get('donations', [DonationController::class, 'index']);
+    Route::post('donations', [DonationController::class, 'store']);
+    Route::get('donations/{id}', [DonationController::class, 'show']);
+    Route::put('donations/{id}', [DonationController::class, 'update']);
+    Route::delete('donations/{id}', [DonationController::class, 'destroy']);
+    Route::get('donations-available', [DonationController::class, 'available']);
     Route::get('donations-all', [DonationController::class, 'all']);
 
- });
-});
-Route::get('/test', function () {
-    return response()->json([
-        'status' => 'success',
-        'message' => 'API is working fine 🚀'
-    ]);
-});
+    // Medicines search (remove auth:sanctum temporarily for testing)
+    Route::get('medicines/search', [MedicineController::class, 'search']);
+    Route::get('/medicines', function () { return \App\Models\Medicine::pluck('brand_name'); });
 
+    // Drug interaction check (remove auth:sanctum temporarily for testing)
+    Route::post('interactions/check', [ConflictController::class, 'check']);
+
+    // Protected routes (keep auth:sanctum for sensitive data)
+    Route::middleware(['auth:sanctum'])->group(function () {
+        // Keep cart and other sensitive routes here
+    });
+});
