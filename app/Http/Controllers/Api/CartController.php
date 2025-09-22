@@ -42,7 +42,7 @@ class CartController extends Controller
         
         $carts = $query->with([
             'medicines.medicine',
-            'pharmacy'
+            'pharmacy.user'
         ])->get();
 
         // Check for expired carts and clean them up
@@ -97,9 +97,9 @@ class CartController extends Controller
                             $stock = $stockData->get($cart->pharmacy_id, collect())
                                 ->get($item->medicine_id);
 
+                            // Add computed fields for display (not saved to DB)
                             $item->is_available = $stock && $stock->quantity >= $item->quantity;
                             $item->stock_status = $this->cartService->calculateStockStatus($stock, $item->quantity);
-                            
                             $item->available_stock = $stock ? $stock->quantity : 0;
                             $item->subtotal = $item->price_at_time * $item->quantity;
                         } catch (\Exception $e) {
@@ -112,12 +112,17 @@ class CartController extends Controller
                     });
                 }
 
-                $cart->total_amount = $cart->medicines->sum('subtotal') ?? 0;
+                // Calculate and save totals to database
+                $cart->total_amount = number_format((float) ($cart->medicines->sum('subtotal') ?? 0.0), 2, '.', '');
                 $cart->total_items = $cart->medicines->sum('quantity') ?? 0;
+                
+                // Save the updated totals to the database
+                $cart->save();
             } catch (\Exception $e) {
                 // Handle cart-level errors
                 $cart->total_amount = 0;
                 $cart->total_items = 0;
+                $cart->save();
             }
         });
 
@@ -215,7 +220,7 @@ class CartController extends Controller
             $currentPrice = $medicine->price;
             
             // Validate price consistency using CartService
-            $priceValidation = $this->cartService->validatePriceConsistency($currentPrice, $existing);
+            $priceValidation = $this->cartService->validatePriceConsistency((float) $currentPrice, $existing);
             if (!$priceValidation['valid']) {
                 return response()->json([
                     'success' => false,
@@ -239,7 +244,7 @@ class CartController extends Controller
 
             $cart->save();
 
-            $updatedCart = $cart->load(['medicines.medicine']);
+            $updatedCart = $cart->load(['medicines.medicine', 'pharmacy.user']);
             
             // Calculate totals for the response
             $updatedCart->total_items = $updatedCart->medicines->sum('quantity') ?? 0;
@@ -308,7 +313,7 @@ class CartController extends Controller
             $item->update(['quantity' => $validated['quantity']]);
             $cart->save();
 
-            $updatedCart = $cart->load(['medicines.medicine']);
+            $updatedCart = $cart->load(['medicines.medicine', 'pharmacy.user']);
             return response()->json(['success' => true, 'message' => 'Updated', 'data' => $updatedCart]);
         });
     }
