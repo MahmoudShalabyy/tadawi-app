@@ -32,6 +32,7 @@ Route::prefix('dashboard')->group(function () {
     Route::get('medicines/stats', [MedicineController::class, 'stats']);
     Route::post('medicines', [MedicineController::class, 'store']);
     Route::put('medicines/{medicine}', [MedicineController::class, 'update']);
+    Route::post('medicines/confirm-correction', [MedicineController::class, 'confirmCorrection']);
     Route::delete('medicines/{medicine}', [MedicineController::class, 'destroy']);
     Route::post('medicines/{id}/restore', [MedicineController::class, 'restore']);
     Route::get('medicines/{medicine}', [MedicineController::class, 'show']);
