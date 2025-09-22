@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Mail;
 
+
 class TestMailCommand extends Command
 {
     protected $signature = 'mail:test {email}';
@@ -21,7 +22,7 @@ class TestMailCommand extends Command
 
             $this->info("✅ Mail sent successfully to {$to}");
         } catch (\Exception $e) {
-            $this->error("❌ Mail failed: " . $e->getMessage());
+            $this->error("❌ Mail is failed: " . $e->getMessage());
         }
     }
 }
