@@ -97,7 +97,7 @@ Route::prefix('v1')->group(function () {
  });
 
 Route::get('/test-mail', function () {
-    Artisan::call('mail:test', ['email' => 'yourpersonalemail@gmail.com']);
+    Artisan::call('mail:test', ['email' => 'mahmoudshalabyy4@gmail.com']);
     return 'Mail command executed';
 });
 });
