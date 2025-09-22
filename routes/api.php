@@ -54,11 +54,11 @@ Route::prefix('v1')->group(function () {
         //Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
     });
 
-
+    Route::get('search', [SearchController::class, 'search']);
     // search routes
     Route::middleware(['auth:sanctum'])->group(function () {
         // Search routes
-        Route::get('search', [SearchController::class, 'search']);
+        
         Route::post('search/with-alternatives', [AlternativeSearchController::class, 'search']);
 
         // Checkout routes

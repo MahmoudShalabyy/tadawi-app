@@ -42,7 +42,7 @@ class CartController extends Controller
         
         $carts = $query->with([
             'medicines.medicine',
-            'pharmacy'
+            'pharmacy.user'
         ])->get();
 
         // Check for expired carts and clean them up
@@ -113,7 +113,9 @@ class CartController extends Controller
                 }
 
                 // Calculate and save totals to database
-                $cart->total_amount = $cart->medicines->sum('subtotal') ?? 0;
+
+                $cart->total_amount = number_format((float) ($cart->medicines->sum('subtotal') ?? 0.0), 2, '.', '');
+
                 $cart->total_items = $cart->medicines->sum('quantity') ?? 0;
                 
                 // Save the updated totals to the database
@@ -220,7 +222,7 @@ class CartController extends Controller
             $currentPrice = $medicine->price;
             
             // Validate price consistency using CartService
-            $priceValidation = $this->cartService->validatePriceConsistency($currentPrice, $existing);
+            $priceValidation = $this->cartService->validatePriceConsistency((float) $currentPrice, $existing);
             if (!$priceValidation['valid']) {
                 return response()->json([
                     'success' => false,
@@ -244,7 +246,7 @@ class CartController extends Controller
 
             $cart->save();
 
-            $updatedCart = $cart->load(['medicines.medicine']);
+            $updatedCart = $cart->load(['medicines.medicine', 'pharmacy.user']);
             
             // Calculate totals for the response
             $updatedCart->total_items = $updatedCart->medicines->sum('quantity') ?? 0;
@@ -313,7 +315,7 @@ class CartController extends Controller
             $item->update(['quantity' => $validated['quantity']]);
             $cart->save();
 
-            $updatedCart = $cart->load(['medicines.medicine']);
+            $updatedCart = $cart->load(['medicines.medicine', 'pharmacy.user']);
             return response()->json(['success' => true, 'message' => 'Updated', 'data' => $updatedCart]);
         });
     }
