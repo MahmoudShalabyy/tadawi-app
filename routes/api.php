@@ -11,6 +11,7 @@ use App\Http\Controllers\Api\PharmacyController;
 use App\Http\Controllers\Api\StockBatchController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\OrderController;
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
@@ -68,6 +69,11 @@ Route::prefix('v1')->group(function () {
         Route::post('checkout/paypal/{pharmacy_id}', [CheckoutController::class, 'processPayPal'])->name('checkout.paypal');
         Route::get('checkout/payment-status/{order_id}', [CheckoutController::class, 'getPaymentStatus'])->name('checkout.payment-status');
         Route::get('checkout/paypal/config', [CheckoutController::class, 'getPayPalConfig'])->name('checkout.paypal.config');
+
+        // Order history routes
+        Route::get('orders', [OrderController::class, 'index'])->name('orders.index');
+        Route::get('orders/stats', [OrderController::class, 'stats'])->name('orders.stats');
+        Route::get('orders/{id}', [OrderController::class, 'show'])->name('orders.show');
 
         // Pharmacy routes
         Route::get('pharmacies', [PharmacyController::class, 'index']);

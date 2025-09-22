@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class Order extends Model
 {
@@ -20,11 +22,14 @@ class Order extends Model
     protected $fillable = [
         'user_id',
         'pharmacy_id',
+        'order_number',
         'status',
         'payment_method',
         'billing_address',
+        'shipping_address',
         'total_items', 
-        'total_amount', 
+        'total_amount',
+        'currency', 
     ];
 
     /**
@@ -37,6 +42,7 @@ class Order extends Model
         'payment_method' => 'string',
         'total_items' => 'integer',
         'total_amount' => 'decimal:2',
+        'currency' => 'string',
     ];
 
     /**
@@ -95,6 +101,14 @@ class Order extends Model
      */
     protected static function booted()
     {
+        static::creating(function ($order) {
+            if (empty($order->order_number)) {
+                $order->order_number = self::generateOrderNumber();
+            }
+            if (empty($order->currency)) {
+                $order->currency = 'EGP';
+            }
+        });
         static::saving(function ($order) {
             if ($order->status === 'cart') {
                 // Load medicines if not already loaded
@@ -112,6 +126,17 @@ class Order extends Model
                 }
             }
         });
+    }
+
+    /**
+     * Generate a human-friendly order number.
+     */
+    protected static function generateOrderNumber(): string
+    {
+        $prefix = 'TAD';
+        $date = now()->format('Ymd');
+        $random = strtoupper(substr(bin2hex(random_bytes(3)), 0, 6));
+        return sprintf('%s-%s-%s', $prefix, $date, $random);
     }
 
     // ========================================
@@ -349,7 +374,7 @@ class Order extends Model
         
         // Log cancellation reason
         if ($reason) {
-            \Log::info("Order {$this->id} cancelled: {$reason}");
+            Log::info("Order {$this->id} cancelled: {$reason}");
         }
 
         return true;
@@ -366,12 +391,12 @@ class Order extends Model
                 'file_name' => $prescriptionData['file_name'],
                 'file_size' => $prescriptionData['file_size'],
                 'mime_type' => $prescriptionData['mime_type'],
-                'uploaded_by' => auth()->id(),
+                'uploaded_by' => Auth::id(),
             ]);
 
             return true;
         } catch (\Exception $e) {
-            \Log::error('Failed to add prescription to order: ' . $e->getMessage());
+            Log::error('Failed to add prescription to order: ' . $e->getMessage());
             return false;
         }
     }
