@@ -8,6 +8,7 @@ use App\Models\StockBatch;
 use App\Models\Medicine;
 use App\Models\PharmacyProfile;
 use App\Models\User;
+use App\Services\PaymentService;
 use App\Traits\ImageHandling;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -18,10 +19,12 @@ class CheckoutService
     use ImageHandling;
     
     protected CartService $cartService;
+    protected PaymentService $paymentService;
 
-    public function __construct(CartService $cartService)
+    public function __construct(CartService $cartService, PaymentService $paymentService)
     {
         $this->cartService = $cartService;
+        $this->paymentService = $paymentService;
     }
 
     /**
@@ -137,8 +140,20 @@ class CheckoutService
                     ];
                 }
 
-                // Update stock after successful order creation (placeholder)
+                // Update stock after successful order creation 
                 $this->updateStockAfterOrder($order);
+
+                // Process payment for the order
+                $paymentResult = $this->paymentService->processPayment($order, [
+                    'method' => $checkoutData['payment_method'] ?? 'cash',
+                    'currency' => $checkoutData['currency'] ?? 'EGP'
+                ]);
+
+                if (!$paymentResult['success']) {
+                    // If payment fails, we should handle this gracefully
+                    Log::warning("Payment failed for order {$order->id}: " . $paymentResult['message']);
+                    // Continue with order creation but log the payment failure
+                }
 
                 // Delete cart after successful order creation
                 $cart->medicines()->delete();
@@ -150,7 +165,8 @@ class CheckoutService
                     'success' => true,
                     'message' => 'Checkout initiated successfully',
                     'order' => $order,
-                    'order_id' => $order->id
+                    'order_id' => $order->id,
+                    'payment_result' => $paymentResult
                 ];
 
             } catch (\Exception $e) {
@@ -276,14 +292,19 @@ class CheckoutService
     protected function convertCartToOrder(Order $cart, array $checkoutData): ?Order
     {
         try {
+            // Calculate proper totals with tax and shipping
+            $totals = $this->calculateOrderTotals($cart);
+            
             $order = Order::create([
                 'user_id' => $cart->user_id,
                 'pharmacy_id' => $cart->pharmacy_id,
                 'status' => 'pending',
                 'payment_method' => $checkoutData['payment_method'] ?? 'cash',
                 'billing_address' => $checkoutData['billing_address'] ?? null,
-                'total_items' => $cart->total_items,
-                'total_amount' => $cart->total_amount,
+                'shipping_address' => $checkoutData['shipping_address'] ?? null,
+                'total_items' => $totals['total_items'],
+                'total_amount' => $totals['total_amount'],
+                'currency' => $checkoutData['currency'] ?? 'EGP',
             ]);
 
             // Copy cart items to order

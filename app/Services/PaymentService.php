@@ -5,6 +5,8 @@ namespace App\Services;
 use App\Models\Order;
 use App\Models\Payment;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderPlaced;
 use Illuminate\Support\Facades\Log;
 
 class PaymentService
@@ -15,6 +17,14 @@ class PaymentService
     public function processPayment(Order $order, array $paymentData): array
     {
         try {
+            // Calculate order total from medicines if order total is 0
+            $orderTotal = $order->total_amount;
+            if ($orderTotal <= 0) {
+                $orderTotal = $order->medicines->sum(function ($item) {
+                    return $item->price_at_time * $item->quantity;
+                });
+            }
+
             // Create payment record
             $payment = Payment::create([
                 'order_id' => $order->id,
@@ -34,11 +44,23 @@ class PaymentService
                 return $result;
             }
 
+            // Update payment with transaction ID from result
+            $payment->update([
+                'transaction_id' => $result['transaction_id'] ?? $payment->transaction_id
+            ]);
+
             // Update payment status to completed
             $this->updatePaymentStatus($payment, 'completed', 'Payment processed successfully');
 
             // Update order status
             $this->updateOrderStatus($order, 'processing');
+
+            // Send order confirmation email (queued)
+            try {
+                Mail::to($order->user->email)->queue(new OrderPlaced($order->id));
+            } catch (\Exception $e) {
+                Log::warning('OrderPlaced email failed to queue: ' . $e->getMessage());
+            }
 
             Log::info("Payment processed successfully for order {$order->id}, payment {$payment->id}");
 
