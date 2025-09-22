@@ -163,6 +163,7 @@ class PharmacyProfileSeeder extends Seeder
                     'longitude' => $pharmacyProfiles[$index]['longitude'],
                     'contact_info' => $pharmacyProfiles[$index]['contact_info'],
                     'verified' => $pharmacyProfiles[$index]['verified'],
+                    'status' => 'active',
                     'rating' => $pharmacyProfiles[$index]['rating'],
                 ]);
             }

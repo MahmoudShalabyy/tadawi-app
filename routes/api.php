@@ -6,12 +6,11 @@ use App\Http\Controllers\Api\DonationController;
 use App\Http\Controllers\Api\MedicineController;
 use App\Http\Controllers\Api\SearchController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\InteractionController;
-use App\Http\Controllers\DrugInteractionController;
 use App\Http\Controllers\Api\AlternativeSearchController;
 use App\Http\Controllers\Api\PharmacyController;
 use App\Http\Controllers\Api\StockBatchController;
 use App\Http\Controllers\Api\CartController;
+use App\Http\Controllers\Api\CheckoutController;
 
 Route::prefix('v1')->group(function () {
     Route::prefix('auth')->group(function () {
@@ -47,8 +46,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/cart', [CartController::class, 'store'])->name('cart.add');
             Route::delete('/cart/clear', [CartController::class, 'clear'])->name('cart.clear');
             Route::get('/cart/recommendations', [CartController::class, 'recommendations'])->name('cart.recommendations');
-            Route::put('/cart/{item}', [CartController::class, 'update'])->name('cart.update');
-            Route::delete('/cart/{item}', [CartController::class, 'destroy'])->name('cart.remove');
+
         });
 
         // Drug interaction routes
@@ -62,6 +60,14 @@ Route::prefix('v1')->group(function () {
         // Search routes
         Route::get('search', [SearchController::class, 'search']);
         Route::post('search/with-alternatives', [AlternativeSearchController::class, 'search']);
+
+        // Checkout routes
+        Route::get('checkout/validate/{pharmacy_id}', [CheckoutController::class, 'validateCart'])->name('checkout.validate');
+        Route::get('checkout/summary/{pharmacy_id}', [CheckoutController::class, 'getSummary'])->name('checkout.summary');
+        Route::post('checkout/initiate/{pharmacy_id}', [CheckoutController::class, 'initiate'])->name('checkout.initiate');
+        Route::post('checkout/paypal/{pharmacy_id}', [CheckoutController::class, 'processPayPal'])->name('checkout.paypal');
+        Route::get('checkout/payment-status/{order_id}', [CheckoutController::class, 'getPaymentStatus'])->name('checkout.payment-status');
+        Route::get('checkout/paypal/config', [CheckoutController::class, 'getPayPalConfig'])->name('checkout.paypal.config');
 
         // Pharmacy routes
         Route::get('pharmacies', [PharmacyController::class, 'index']);
@@ -109,6 +115,9 @@ Route::prefix('v1')->group(function () {
 
     // Admin/Public routes for viewing all donations
     Route::get('donations-all', [DonationController::class, 'all']);
+
+    // PayPal webhook (public route)
+    Route::post('checkout/paypal/webhook', [CheckoutController::class, 'paypalWebhook'])->name('checkout.paypal.webhook');
 
  });
 });
