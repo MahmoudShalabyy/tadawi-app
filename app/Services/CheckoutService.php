@@ -80,10 +80,14 @@ class CheckoutService
                 return $userValidation;
             }
 
+            // Compute totals for parity with checkout summary without mutating DB state
+            $totals = $this->calculateOrderTotals($cart);
+
             return [
                 'valid' => true,
                 'message' => 'Cart is ready for checkout',
-                'cart' => $cart
+                'cart' => $cart,
+                'totals' => $totals,
             ];
 
         } catch (\Exception $e) {
