@@ -11,6 +11,9 @@ use Illuminate\Validation\ValidationException;
 use Laravel\Socialite\Facades\Socialite;
 use Carbon\Carbon;
 
+use Brevo\Client\Api\TransactionalEmailsApi;
+use Brevo\Client\Configuration;
+use Brevo\Client\Model\SendSmtpEmail;
 class AuthService
 {
     /**
@@ -295,6 +298,57 @@ class AuthService
     /**
      * Send OTP email to user.
      */
+    // private function sendOtpEmail(string $email): void
+    // {
+    //     try {
+    //         $otpRecord = Otp::generateOtp($email, 'verification');
+    //         $otpCode = $otpRecord->getPlainOtp();
+            
+    //         // Send email with OTP
+    //         Mail::send('emails.otp', ['otp' => $otpCode], function ($message) use ($email) {
+    //             $message->to($email);
+    //             $message->subject('Tadawi - Email Verification Code');
+    //         });
+
+    //         // In development, log the OTP for testing
+    //         if (app()->environment('local')) {
+    //             Log::info("OTP for {$email}: {$otpCode}");
+    //         }
+    //     } catch (\Exception $e) {
+    //         Log::error("Failed to send OTP to {$email}: " . $e->getMessage());
+    //         throw ValidationException::withMessages([
+    //             'email' => ['Failed to send OTP. Please try again.']
+    //         ]);
+    //     }
+    // }
+
+    /**
+     * Send password reset OTP email to user.
+     */
+    // private function sendPasswordResetOtpEmail(string $email): void
+    // {
+    //     try {
+    //         $otpRecord = Otp::generateOtp($email, 'password_reset');
+    //         $otpCode = $otpRecord->getPlainOtp();
+            
+    //         // Send email with OTP
+    //         Mail::send('emails.password-reset-otp', ['otp' => $otpCode], function ($message) use ($email) {
+    //             $message->to($email);
+    //             $message->subject('Tadawi - Password Reset Code');
+    //         });
+
+    //         // In development, log the OTP for testing
+    //         if (app()->environment('local')) {
+    //             Log::info("Password Reset OTP for {$email}: {$otpCode}");
+    //         }
+    //     } catch (\Exception $e) {
+    //         Log::error("Failed to send password reset OTP to {$email}: " . $e->getMessage());
+    //         throw ValidationException::withMessages([
+    //             'email' => ['Failed to send password reset OTP. Please try again.']
+    //         ]);
+    //     }
+    // }
+
     private function sendOtpEmail(string $email): void
     {
         try {
@@ -302,10 +356,16 @@ class AuthService
             $otpCode = $otpRecord->getPlainOtp();
             
             // Send email with OTP
-            Mail::send('emails.otp', ['otp' => $otpCode], function ($message) use ($email) {
-                $message->to($email);
-                $message->subject('Tadawi - Email Verification Code');
-            });
+            $config = Configuration::getDefaultConfiguration()->setApiKey('api-key', env('MAIL_PASSWORD'));
+            $apiInstance = new TransactionalEmailsApi(new GuzzleHttp\Client(), $config);
+
+            $sendSmtpEmail = new SendSmtpEmail();
+            $sendSmtpEmail->setSender(['name' => env('MAIL_FROM_NAME'), 'email' => env('MAIL_FROM_ADDRESS')]);
+            $sendSmtpEmail->setTo([['email' => $email, 'name' => 'Recipient']]);
+            $sendSmtpEmail->setSubject('Tadawi - Email Verification Code');
+            $sendSmtpEmail->setHtmlContent("<p>Your OTP is: {$otpCode}</p>");
+
+            $apiInstance->sendTransacEmail($sendSmtpEmail);
 
             // In development, log the OTP for testing
             if (app()->environment('local')) {
@@ -329,10 +389,16 @@ class AuthService
             $otpCode = $otpRecord->getPlainOtp();
             
             // Send email with OTP
-            Mail::send('emails.password-reset-otp', ['otp' => $otpCode], function ($message) use ($email) {
-                $message->to($email);
-                $message->subject('Tadawi - Password Reset Code');
-            });
+            $config = Configuration::getDefaultConfiguration()->setApiKey('api-key', env('MAIL_PASSWORD'));
+            $apiInstance = new TransactionalEmailsApi(new GuzzleHttp\Client(), $config);
+
+            $sendSmtpEmail = new SendSmtpEmail();
+            $sendSmtpEmail->setSender(['name' => env('MAIL_FROM_NAME'), 'email' => env('MAIL_FROM_ADDRESS')]);
+            $sendSmtpEmail->setTo([['email' => $email, 'name' => 'Recipient']]);
+            $sendSmtpEmail->setSubject('Tadawi - Password Reset Code');
+            $sendSmtpEmail->setHtmlContent("<p>Your OTP is: {$otpCode}</p>");
+
+            $apiInstance->sendTransacEmail($sendSmtpEmail);
 
             // In development, log the OTP for testing
             if (app()->environment('local')) {
