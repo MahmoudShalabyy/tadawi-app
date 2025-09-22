@@ -50,9 +50,6 @@ Route::prefix('v1')->group(function () {
             Route::get('/cart/recommendations', [CartController::class, 'recommendations'])->name('cart.recommendations');
         });
 
-        // Drug interaction routes
-        // Route::get('/suggest-drugs', [InteractionController::class, 'suggest']);
-        // Route::post('/check-interaction', [DrugInteractionController::class, 'checkInteraction']);
     });
 
     // Search routes (remove auth:sanctum temporarily for testing)
