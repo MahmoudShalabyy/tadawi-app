@@ -113,7 +113,9 @@ class CartController extends Controller
                 }
 
                 // Calculate and save totals to database
+
                 $cart->total_amount = number_format((float) ($cart->medicines->sum('subtotal') ?? 0.0), 2, '.', '');
+
                 $cart->total_items = $cart->medicines->sum('quantity') ?? 0;
                 
                 // Save the updated totals to the database

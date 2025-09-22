@@ -23,7 +23,7 @@ return new class extends Migration
             $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();
             $table->string('contact_info')->nullable();
-            $table->boolean('verified')->default(false);
+            $table->boolean('verified')->default(true);
             $table->decimal('rating', 3, 2)->default(0);
 
             $table->timestamps();

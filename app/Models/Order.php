@@ -82,10 +82,11 @@ class Order extends Model
     /**
      * Get the payments for this order.
      */
-   /* public function payments(): HasMany
+
+    public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);
-    }*/
+    }
 
     /**
      * Accessor for pharmacy_name derived from related pharmacy's user name.
@@ -93,6 +94,7 @@ class Order extends Model
     public function getPharmacyNameAttribute(): ?string
     {
         return data_get($this, 'pharmacy.user.name');
+
     }
 
     /**
@@ -365,6 +367,7 @@ class Order extends Model
         
         // Log cancellation reason
         if ($reason) {
+
             Log::info("Order {$this->id} cancelled: {$reason}");
         }
 
@@ -374,7 +377,8 @@ class Order extends Model
     /**
      * Add prescription to order
      */
-    /*public function addPrescription(array $prescriptionData): bool
+
+    public function addPrescription(array $prescriptionData): bool
     {
         try {
             $this->prescriptionUploads()->create([
@@ -382,15 +386,18 @@ class Order extends Model
                 'file_name' => $prescriptionData['file_name'],
                 'file_size' => $prescriptionData['file_size'],
                 'mime_type' => $prescriptionData['mime_type'],
+
                 'uploaded_by' => optional(auth()->user())->id,
             ]);
 
             return true;
         } catch (\Exception $e) {
+
             Log::error('Failed to add prescription to order: ' . $e->getMessage());
             return false;
         }
-    }*/
+    }
+
 
     // ========================================
     // ORDER QUERY SCOPES
@@ -459,12 +466,12 @@ class Order extends Model
             'medicines' => $this->medicines->map(function ($item) {
                 return [
                     'id' => $item->medicine_id,
-                    'name' => data_get($item, 'medicine.brand_name', 'Unknown Medicine'),
+                    'name' => $item->medicine->brand_name ?? 'Unknown Medicine',
                     'quantity' => $item->quantity,
                     'price' => $item->price_at_time,
                     'subtotal' => $item->price_at_time * $item->quantity,
                 ];
-            })->toArray(),
+            }),
             'totals' => $totals,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,

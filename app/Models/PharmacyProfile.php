@@ -23,6 +23,7 @@ class PharmacyProfile extends Model
         'longitude',
         'contact_info',
         'verified',
+        'status',
         'rating',
     ];
 
