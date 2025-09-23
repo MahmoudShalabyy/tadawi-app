@@ -24,10 +24,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'EnsureAdmin' => \App\Http\Middleware\EnsureAdmin::class,
         ]);
 
-        // Configure Sanctum middleware if needed
-        // $middleware->api(prepend: [
-        //     \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-        // ]);
+        // Configure Sanctum middleware
+       /* $middleware->api(prepend: [
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+        ]);*/
     })
     ->withExceptions(function (Exceptions $exceptions) {
     })
