@@ -359,7 +359,8 @@ private function sendOtpEmail(string $email): void
         $otpRecord = Otp::generateOtp($email, 'verification');
         $otpCode = $otpRecord->getPlainOtp();
 
-        $config = \Brevo\Client\Configuration::getDefaultConfiguration()->setApiKey('api-key', getenv('MAIL_PASSWORD'));
+        $config = \Brevo\Client\Configuration::getDefaultConfiguration()
+                    ->setApiKey('api-key', getenv('MAIL_PASSWORD'));
         $apiInstance = new \Brevo\Client\Api\TransactionalEmailsApi(new \GuzzleHttp\Client(), $config);
 
         $sendSmtpEmail = new \Brevo\Client\Model\SendSmtpEmail();
@@ -371,21 +372,21 @@ private function sendOtpEmail(string $email): void
         $sendSmtpEmail->setSubject('Tadawi - Email Verification Code');
         $sendSmtpEmail->setHtmlContent("<p>Your OTP is: {$otpCode}</p>");
 
-        $response = $apiInstance->sendTransacEmail($sendSmtpEmail);
-        if ($response->getStatusCode() !== 201) {
-            throw new \Exception('Failed to send email: ' . $response->getReasonPhrase());
-        }
+        // هذا السطر غير مطلوب لأنه لا توجد getStatusCode()
+        $apiInstance->sendTransacEmail($sendSmtpEmail);
 
         if (app()->environment('local')) {
             Log::info("OTP for {$email}: {$otpCode}");
         }
+
     } catch (\Exception $e) {
         Log::error("Failed to send OTP to {$email}: " . $e->getMessage());
         throw ValidationException::withMessages([
-            'email' => ['Failed to send OTP. Please try again. ' . $e->getMessage()]
+            'email' => ['Failed to send OTP. Please try again.']
         ]);
     }
 }
+
 
 
 }
