@@ -353,46 +353,36 @@ class AuthService
 
 
 
-private function sendPasswordResetOtpEmail(string $email): void
+private function sendOtpEmail(string $email): void
 {
     try {
-        // توليد OTP جديد للـ password reset
-        $otpRecord = Otp::generateOtp($email, 'password_reset');
+        $otpRecord = Otp::generateOtp($email, 'verification');
         $otpCode = $otpRecord->getPlainOtp();
 
-        // إعداد Brevo API
-        $apiKey = getenv('MAIL_PASSWORD');
-        if (!$apiKey) {
-            throw new \Exception('API Key not found in environment variables.');
-        }
-        $config = \Brevo\Client\Configuration::getDefaultConfiguration()
-            ->setApiKey('api-key', $apiKey); // استخدم MAIL_PASSWORD من deploy variables
-        $apiInstance = new \Brevo\Client\Api\TransactionalEmailsApi(
-            new \GuzzleHttp\Client(),
-            $config
-        );
+        $config = \Brevo\Client\Configuration::getDefaultConfiguration()->setApiKey('api-key', getenv('MAIL_PASSWORD'));
+        $apiInstance = new \Brevo\Client\Api\TransactionalEmailsApi(new \GuzzleHttp\Client(), $config);
 
-        // إعداد الرسالة
         $sendSmtpEmail = new \Brevo\Client\Model\SendSmtpEmail();
         $sendSmtpEmail->setSender([
             'name' => getenv('MAIL_FROM_NAME') ?: 'Tadawi App',
             'email' => getenv('MAIL_FROM_ADDRESS') ?: 'itiprojects7@gmail.com'
         ]);
         $sendSmtpEmail->setTo([['email' => $email, 'name' => 'Recipient']]);
-        $sendSmtpEmail->setSubject('Tadawi - Password Reset Code');
-        $sendSmtpEmail->setHtmlContent("<p>Your OTP for password reset is: {$otpCode}</p>");
+        $sendSmtpEmail->setSubject('Tadawi - Email Verification Code');
+        $sendSmtpEmail->setHtmlContent("<p>Your OTP is: {$otpCode}</p>");
 
-        // إرسال الرسالة
-        $apiInstance->sendTransacEmail($sendSmtpEmail);
+        $response = $apiInstance->sendTransacEmail($sendSmtpEmail);
+        if ($response->getStatusCode() !== 201) {
+            throw new \Exception('Failed to send email: ' . $response->getReasonPhrase());
+        }
 
-        // للـ development، سجل الـ OTP في اللوج لتجربة
         if (app()->environment('local')) {
-            Log::info("Password Reset OTP for {$email}: {$otpCode}");
+            Log::info("OTP for {$email}: {$otpCode}");
         }
     } catch (\Exception $e) {
-        Log::error("Failed to send password reset OTP to {$email}: " . $e->getMessage());
+        Log::error("Failed to send OTP to {$email}: " . $e->getMessage());
         throw ValidationException::withMessages([
-            'email' => ['Failed to send password reset OTP. Please try again.']
+            'email' => ['Failed to send OTP. Please try again. ' . $e->getMessage()]
         ]);
     }
 }
